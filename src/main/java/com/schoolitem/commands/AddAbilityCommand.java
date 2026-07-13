@@ -21,7 +21,7 @@ public class AddAbilityCommand implements CommandExecutor {
         }
         
         if (!player.hasPermission("schoolitem.admin")) {
-            player.sendMessage("§cBạn không có quyền sử dụng lệnh này!");
+            sender.sendMessage("§cBạn không có quyền sử dụng lệnh này!");
             return true;
         }
         
@@ -46,14 +46,12 @@ public class AddAbilityCommand implements CommandExecutor {
             return true;
         }
         
-        // Kiểm tra ability hợp lệ
         if (!ability.equals("pve") && !ability.equals("pvp") && !ability.equals("multiplierblock")) {
             sender.sendMessage("§cAbility không hợp lệ!");
             sender.sendMessage("§eCác ability: pve, pvp, multiplierblock");
             return true;
         }
         
-        // Kiểm tra item trên tay
         ItemStack item = player.getInventory().getItemInMainHand();
         if (item == null || item.getType() == Material.AIR) {
             sender.sendMessage("§cVui lòng cầm item trên tay!");
@@ -63,7 +61,6 @@ public class AddAbilityCommand implements CommandExecutor {
         ItemMeta meta = item.getItemMeta();
         List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
         
-        // Xóa ability cũ nếu có
         List<String> newLore = new ArrayList<>();
         String abilityDisplay = getAbilityDisplay(ability);
         boolean skip = false;
@@ -84,7 +81,6 @@ public class AddAbilityCommand implements CommandExecutor {
         }
         lore = newLore;
         
-        // Thêm ability mới
         String color = getAbilityColor(ability);
         String emoji = getAbilityEmoji(ability);
         String displayName = getAbilityDisplay(ability);

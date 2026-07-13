@@ -1,5 +1,5 @@
 name: SchoolItem
-version: ${project.version}
+version: 1.0.0
 main: com.schoolitem.SchoolItem
 api-version: 1.21
 authors: [SchoolDev]
@@ -13,6 +13,3 @@ permissions:
   schoolitem.admin:
     description: Cho phép sử dụng tất cả lệnh
     default: op
-  schoolitem.use:
-    description: Cho phép sử dụng item có ability
-    default: true
