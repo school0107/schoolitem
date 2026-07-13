@@ -21,23 +21,23 @@ public class RemoveAbilityCommand implements CommandExecutor {
         }
         
         if (!player.hasPermission("schoolitem.admin")) {
-            player.sendMessage("§cBạn không có quyền sử dụng lệnh này!");
+            sender.sendMessage("§cBạn không có quyền sử dụng lệnh này!");
             return true;
         }
         
         if (args.length < 1 || !args[0].equalsIgnoreCase("remove")) {
-            player.sendMessage("§cSử dụng: /si remove");
+            sender.sendMessage("§cSử dụng: /si remove");
             return true;
         }
         
         ItemStack item = player.getInventory().getItemInMainHand();
         if (item == null || item.getType() == Material.AIR) {
-            player.sendMessage("§cVui lòng cầm item trên tay!");
+            sender.sendMessage("§cVui lòng cầm item trên tay!");
             return true;
         }
         
         if (!item.hasItemMeta() || !item.getItemMeta().hasLore()) {
-            player.sendMessage("§cItem này không có ability!");
+            sender.sendMessage("§cItem này không có ability!");
             return true;
         }
         
@@ -53,8 +53,10 @@ public class RemoveAbilityCommand implements CommandExecutor {
                 if (!skip) {
                     skip = true;
                     removed = true;
-                    continue;
+                } else {
+                    skip = false;
                 }
+                continue;
             }
             if (skip) {
                 skip = false;
@@ -64,14 +66,14 @@ public class RemoveAbilityCommand implements CommandExecutor {
         }
         
         if (!removed) {
-            player.sendMessage("§cItem này không có ability!");
+            sender.sendMessage("§cItem này không có ability!");
             return true;
         }
         
         meta.setLore(newLore);
         item.setItemMeta(meta);
         
-        player.sendMessage("§a✓ Đã xóa ability khỏi item!");
+        sender.sendMessage("§a✓ Đã xóa ability khỏi item!");
         return true;
     }
 }

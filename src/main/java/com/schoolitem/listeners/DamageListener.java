@@ -28,7 +28,7 @@ public class DamageListener implements Listener {
         if (!isPVE && !isPVP) return;
         
         String ability = isPVE ? "pve" : "pvp";
-        double value = getAbilityValue(item, ability);
+        double value = getAbilityValueFromItem(item, ability);
         
         if (value <= 0) return;
         if (value > 100) value = 100;
@@ -39,7 +39,7 @@ public class DamageListener implements Listener {
         event.setDamage(reducedDamage);
     }
     
-    private double getAbilityValue(ItemStack item, String ability) {
+    private double getAbilityValueFromItem(ItemStack item, String ability) {
         ItemMeta meta = item.getItemMeta();
         if (!meta.hasLore()) return 0;
         

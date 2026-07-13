@@ -19,9 +19,13 @@ public class SchoolItem extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new DamageListener(), this);
         getServer().getPluginManager().registerEvents(new BlockBreakListener(), this);
         
+        getLogger().info("§a=========================================");
         getLogger().info("§aSchoolItem plugin đã được kích hoạt!");
+        getLogger().info("§aVersion: " + getDescription().getVersion());
+        getLogger().info("§a=========================================");
         getLogger().info("§eSử dụng /si add <ability> <value> để thêm ability");
         getLogger().info("§eSử dụng /si remove để xóa ability");
+        getLogger().info("§a=========================================");
     }
 
     @Override

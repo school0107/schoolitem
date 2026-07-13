@@ -18,7 +18,7 @@ public class BlockBreakListener implements Listener {
         
         if (item == null || !item.hasItemMeta()) return;
         
-        double multiplier = getAbilityValue(item, "multiplierblock");
+        double multiplier = getMultiplierValue(item);
         if (multiplier <= 0) return;
         
         for (ItemStack drop : event.getBlock().getDrops(item)) {
@@ -33,7 +33,7 @@ public class BlockBreakListener implements Listener {
         }
     }
     
-    private double getAbilityValue(ItemStack item, String ability) {
+    private double getMultiplierValue(ItemStack item) {
         ItemMeta meta = item.getItemMeta();
         if (!meta.hasLore()) return 0;
         
