@@ -1,5 +1,7 @@
 package com.schoolitem.utils;
 
+import com.schoolitem.SchoolItem;
+import com.schoolitem.config.PluginConfig;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -11,6 +13,7 @@ public class ItemUtils {
     private static final Pattern HEX_PATTERN = Pattern.compile("&#([A-Fa-f0-9]{6})");
     
     public static String colorize(String message) {
+        if (message == null) return "";
         Matcher matcher = HEX_PATTERN.matcher(message);
         StringBuffer buffer = new StringBuffer();
         while (matcher.find()) {
@@ -25,8 +28,11 @@ public class ItemUtils {
         ItemMeta meta = item.getItemMeta();
         if (!meta.hasLore()) return false;
         
+        PluginConfig config = SchoolItem.getInstance().getPluginConfig();
+        String displayName = config.getAbilityDisplayName(ability);
+        
         for (String line : meta.getLore()) {
-            if (line.contains(ability)) {
+            if (line.contains(displayName)) {
                 return true;
             }
         }
@@ -38,10 +44,11 @@ public class ItemUtils {
         ItemMeta meta = item.getItemMeta();
         if (!meta.hasLore()) return 0;
         
-        String displayName = getAbilityDisplayName(ability);
+        PluginConfig config = SchoolItem.getInstance().getPluginConfig();
+        String displayName = config.getAbilityDisplayName(ability);
+        
         for (String line : meta.getLore()) {
             if (line.contains(displayName)) {
-                // Extract number from line
                 String[] parts = line.split(" ");
                 for (String part : parts) {
                     try {
@@ -55,14 +62,5 @@ public class ItemUtils {
             }
         }
         return 0;
-    }
-    
-    private static String getAbilityDisplayName(String ability) {
-        switch (ability.toLowerCase()) {
-            case "pve": return "Giảm Sát Thương PVE";
-            case "pvp": return "Giảm Sát Thương PVP";
-            case "multiplierblock": return "Nhân Block";
-            default: return ability;
-        }
     }
 }
