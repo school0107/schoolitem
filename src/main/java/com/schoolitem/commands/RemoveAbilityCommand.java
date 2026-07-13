@@ -1,7 +1,5 @@
 package com.schoolitem.commands;
 
-import com.schoolitem.SchoolItem;
-import com.schoolitem.utils.ItemUtils;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -14,11 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RemoveAbilityCommand implements CommandExecutor {
-    private final SchoolItem plugin;
-    
-    public RemoveAbilityCommand(SchoolItem plugin) {
-        this.plugin = plugin;
-    }
     
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -44,7 +37,7 @@ public class RemoveAbilityCommand implements CommandExecutor {
         }
         
         if (!item.hasItemMeta() || !item.getItemMeta().hasLore()) {
-            player.sendMessage("§cItem này không có ability để xóa!");
+            player.sendMessage("§cItem này không có ability!");
             return true;
         }
         
@@ -56,7 +49,7 @@ public class RemoveAbilityCommand implements CommandExecutor {
         boolean skip = false;
         
         for (String line : lore) {
-            if (line.contains("&m--------------------------------")) {
+            if (line.contains("§m--------------------------------")) {
                 if (!skip) {
                     skip = true;
                     removed = true;
@@ -71,7 +64,7 @@ public class RemoveAbilityCommand implements CommandExecutor {
         }
         
         if (!removed) {
-            player.sendMessage("§cItem này không có ability để xóa!");
+            player.sendMessage("§cItem này không có ability!");
             return true;
         }
         

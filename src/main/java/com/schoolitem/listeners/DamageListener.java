@@ -1,7 +1,5 @@
 package com.schoolitem.listeners;
 
-import com.schoolitem.SchoolItem;
-import com.schoolitem.utils.ItemUtils;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
@@ -10,13 +8,11 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+
+import java.util.List;
 
 public class DamageListener implements Listener {
-    private final SchoolItem plugin;
-    
-    public DamageListener(SchoolItem plugin) {
-        this.plugin = plugin;
-    }
     
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEntityDamage(EntityDamageByEntityEvent event) {
@@ -32,16 +28,36 @@ public class DamageListener implements Listener {
         if (!isPVE && !isPVP) return;
         
         String ability = isPVE ? "pve" : "pvp";
-        double value = ItemUtils.getAbilityValue(item, ability);
+        double value = getAbilityValue(item, ability);
         
         if (value <= 0) return;
-        
-        // Limit reduction to 100%
         if (value > 100) value = 100;
         
         double damage = event.getDamage();
         double reducedDamage = damage * (1 - value / 100.0);
         
         event.setDamage(reducedDamage);
+    }
+    
+    private double getAbilityValue(ItemStack item, String ability) {
+        ItemMeta meta = item.getItemMeta();
+        if (!meta.hasLore()) return 0;
+        
+        String displayName = ability.equals("pve") ? "Giảm Sát Thương PVE" : "Giảm Sát Thương PVP";
+        
+        for (String line : meta.getLore()) {
+            if (line.contains(displayName)) {
+                String[] parts = line.split(" ");
+                for (String part : parts) {
+                    try {
+                        String numStr = part.replaceAll("[^0-9.]", "");
+                        if (!numStr.isEmpty()) {
+                            return Double.parseDouble(numStr);
+                        }
+                    } catch (NumberFormatException ignored) {}
+                }
+            }
+        }
+        return 0;
     }
 }

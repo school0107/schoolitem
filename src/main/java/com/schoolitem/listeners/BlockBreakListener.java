@@ -1,6 +1,5 @@
 package com.schoolitem.listeners;
 
-import com.schoolitem.utils.ItemUtils;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -8,6 +7,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 public class BlockBreakListener implements Listener {
     
@@ -18,14 +18,12 @@ public class BlockBreakListener implements Listener {
         
         if (item == null || !item.hasItemMeta()) return;
         
-        double multiplier = ItemUtils.getAbilityValue(item, "multiplierblock");
+        double multiplier = getAbilityValue(item, "multiplierblock");
         if (multiplier <= 0) return;
         
-        // Get drops
         for (ItemStack drop : event.getBlock().getDrops(item)) {
             if (drop == null || drop.getType() == Material.AIR) continue;
             
-            // Add multiplied drops directly to inventory
             int extraAmount = (int) Math.round(multiplier - 1);
             if (extraAmount > 0) {
                 ItemStack copy = drop.clone();
@@ -33,5 +31,25 @@ public class BlockBreakListener implements Listener {
                 player.getInventory().addItem(copy);
             }
         }
+    }
+    
+    private double getAbilityValue(ItemStack item, String ability) {
+        ItemMeta meta = item.getItemMeta();
+        if (!meta.hasLore()) return 0;
+        
+        for (String line : meta.getLore()) {
+            if (line.contains("Nhân Block")) {
+                String[] parts = line.split(" ");
+                for (String part : parts) {
+                    try {
+                        String numStr = part.replaceAll("[^0-9.]", "");
+                        if (!numStr.isEmpty()) {
+                            return Double.parseDouble(numStr);
+                        }
+                    } catch (NumberFormatException ignored) {}
+                }
+            }
+        }
+        return 0;
     }
 }
