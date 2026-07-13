@@ -1,0 +1,157 @@
+# ============================================
+# SchoolItem Plugin Configuration
+# ============================================
+# Minecraft 1.21+ | Java 21+
+# ============================================
+
+# ============================================
+# CÀI ĐẶT ABILITIES
+# ============================================
+abilities:
+  # Giảm sát thương từ quái vật (PVE)
+  pve:
+    enabled: true
+    min-value: 0.0
+    max-value: 100.0
+    display-name: "Giảm Sát Thương PVE"
+    color: "&#FF6B6B"
+    emoji: "⚔️"
+    unit: "%"
+    description: "Giảm {value}% sát thương từ quái vật"
+    
+  # Giảm sát thương từ người chơi (PVP)
+  pvp:
+    enabled: true
+    min-value: 0.0
+    max-value: 100.0
+    display-name: "Giảm Sát Thương PVP"
+    color: "&#FFA94D"
+    emoji: "🛡️"
+    unit: "%"
+    description: "Giảm {value}% sát thương từ người chơi"
+    
+  # Nhân số lượng block khi đào
+  multiplierblock:
+    enabled: true
+    min-value: 1.0
+    max-value: 100.0
+    display-name: "Nhân Block"
+    color: "&#69DB7C"
+    emoji: "⛏️"
+    unit: "x"
+    description: "Nhân {value}x số lượng block khi đào"
+
+# ============================================
+# CÀI ĐẶT CHUNG
+# ============================================
+settings:
+  # Hiển thị thông báo khi sử dụng lệnh
+  enable-message: true
+  
+  # Prefix cho tất cả thông báo
+  message-prefix: "&8[&6SchoolItem&8] &r"
+  
+  # Hiệu ứng hạt khi sử dụng ability (không bắt buộc)
+  enable-particle-effect: true
+  
+  # Hiệu ứng âm thanh khi sử dụng ability
+  enable-sound-effect: true
+  
+  # Các world không cho phép sử dụng ability
+  disabled-worlds:
+    - "world_nether"
+    - "world_the_end"
+  
+  # Định dạng hiển thị trong lore
+  lore-separator: "&7&m--------------------------------"
+  lore-format: "&{color}{emoji} {display-name} &fGiá trị: &e{value}{unit}"
+  lore-description: "&7✦ &f{description}"
+
+# ============================================
+# CÀI ĐẶT PERMISSION
+# ============================================
+permissions:
+  # Cho phép sử dụng tất cả lệnh admin
+  admin:
+    default: "op"
+    description: "Cho phép sử dụng tất cả lệnh của SchoolItem"
+  
+  # Cho phép người chơi sử dụng item có ability
+  use:
+    default: "true"
+    description: "Cho phép sử dụng item có ability"
+
+# ============================================
+# CÀI ĐẶT MÀU SẮC & EMOJI
+# ============================================
+colors:
+  # Có thể custom màu sắc cho từng loại
+  success: "&a"
+  error: "&c"
+  warning: "&e"
+  info: "&b"
+  
+emojis:
+  success: "✅"
+  error: "❌"
+  warning: "⚠️"
+  info: "ℹ️"
+  add: "➕"
+  remove: "➖"
+
+# ============================================
+# CÀI ĐẶT ITEM FILTER
+# ============================================
+item-filter:
+  # Cho phép thêm ability vào những item nào
+  # true = tất cả, false = chỉ những item trong danh sách
+  whitelist-mode: true
+  
+  # Danh sách item được phép (nếu whitelist-mode = false)
+  allowed-items:
+    - "DIAMOND_SWORD"
+    - "NETHERITE_SWORD"
+    - "DIAMOND_PICKAXE"
+    - "NETHERITE_PICKAXE"
+    - "DIAMOND_AXE"
+    - "NETHERITE_AXE"
+    - "BOW"
+    - "CROSSBOW"
+    - "SHIELD"
+    - "ELYTRA"
+  
+  # Danh sách item bị cấm
+  blocked-items:
+    - "AIR"
+    - "BEDROCK"
+    - "COMMAND_BLOCK"
+
+# ============================================
+# CÀI ĐẶT LOGGING
+# ============================================
+logging:
+  # Ghi log khi thêm/xóa ability
+  enabled: true
+  
+  # Ghi log vào console
+  console: true
+  
+  # Ghi log vào file
+  file: true
+  
+  # Chi tiết log
+  detail: true
+
+# ============================================
+# CÀI ĐẶT DATABASE (Tùy chọn - lưu trữ item)
+# ============================================
+database:
+  # Lưu trữ item vào database (chưa hỗ trợ)
+  enabled: false
+  type: "sqlite" # sqlite, mysql
+  host: "localhost"
+  port: 3306
+  database: "schoolitem"
+  username: "root"
+  password: "password"
+  table: "items"
