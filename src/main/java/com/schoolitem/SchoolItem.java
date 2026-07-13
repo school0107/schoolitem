@@ -4,6 +4,7 @@ import com.schoolitem.commands.AddAbilityCommand;
 import com.schoolitem.commands.RemoveAbilityCommand;
 import com.schoolitem.listeners.DamageListener;
 import com.schoolitem.listeners.BlockBreakListener;
+import com.schoolitem.utils.VersionUtils;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class SchoolItem extends JavaPlugin {
@@ -21,9 +22,14 @@ public class SchoolItem extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new DamageListener(this), this);
         getServer().getPluginManager().registerEvents(new BlockBreakListener(this), this);
         
+        // Show version info
+        getLogger().info("§a=========================================");
         getLogger().info("§aSchoolItem plugin đã được kích hoạt!");
+        getLogger().info(VersionUtils.getVersionInfo());
+        getLogger().info("§a=========================================");
         getLogger().info("§eSử dụng /si add <ability> <value> để thêm ability");
         getLogger().info("§eSử dụng /si remove để xóa ability");
+        getLogger().info("§a=========================================");
     }
 
     @Override
