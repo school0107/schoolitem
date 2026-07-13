@@ -1,9 +1,9 @@
 name: SchoolItem
-version: 1.0.0
+version: ${project.version}
 main: com.schoolitem.SchoolItem
 api-version: 1.21
 authors: [SchoolDev]
-description: Plugin quản lý abilities cho item
+description: Plugin quản lý abilities cho item - Build ${build.number}
 commands:
   si:
     description: Lệnh chính của SchoolItem
