@@ -1,4 +1,4 @@
-package com.schoolitem.commands;
+package com.schoolitem;
 
 import com.schoolitem.commands.AddAbilityCommand;
 import com.schoolitem.commands.RemoveAbilityCommand;

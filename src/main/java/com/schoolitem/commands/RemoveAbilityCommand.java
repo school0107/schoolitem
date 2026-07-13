@@ -28,7 +28,6 @@ public class RemoveAbilityCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         
-        // Kiểm tra đúng cú pháp
         if (args.length < 1 || !args[0].equalsIgnoreCase("remove")) {
             sender.sendMessage(ChatColor.RED + "Sử dụng: /si remove");
             return true;

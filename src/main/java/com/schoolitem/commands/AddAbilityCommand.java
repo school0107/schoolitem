@@ -30,7 +30,6 @@ public class AddAbilityCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         
-        // Kiểm tra đúng cú pháp
         if (args.length < 3 || !args[0].equalsIgnoreCase("add")) {
             sender.sendMessage(ChatColor.RED + "Sử dụng: /si add <ability> <value>");
             sender.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock");
@@ -71,13 +70,11 @@ public class AddAbilityCommand implements CommandExecutor, TabCompleter {
         List<String> newLore = new ArrayList<>();
         String abilityDisplay = getAbilityDisplay(ability);
         boolean skip = false;
-        boolean found = false;
         
         for (String line : lore) {
             if (line.contains("§m--------------------------------")) {
                 if (!skip) {
                     skip = true;
-                    found = true;
                     continue;
                 } else {
                     skip = false;
@@ -148,7 +145,6 @@ public class AddAbilityCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
         
         if (args.length == 1) {
-            // Tab complete cho subcommand: add, remove
             List<String> subCommands = Arrays.asList("add", "remove");
             for (String sub : subCommands) {
                 if (sub.startsWith(args[0].toLowerCase())) {
@@ -156,14 +152,12 @@ public class AddAbilityCommand implements CommandExecutor, TabCompleter {
                 }
             }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("add")) {
-            // Tab complete cho ability
             for (String ability : abilities) {
                 if (ability.startsWith(args[1].toLowerCase())) {
                     completions.add(ability);
                 }
             }
         } else if (args.length == 3 && args[0].equalsIgnoreCase("add")) {
-            // Gợi ý giá trị mẫu
             String ability = args[1].toLowerCase();
             if (ability.equals("pve") || ability.equals("pvp")) {
                 completions.add("50");
