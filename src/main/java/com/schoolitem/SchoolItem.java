@@ -1,7 +1,6 @@
 package com.schoolitem;
 
-import com.schoolitem.commands.AddAbilityCommand;
-import com.schoolitem.commands.RemoveAbilityCommand;
+import com.schoolitem.commands.MainCommand;
 import com.schoolitem.listeners.DamageListener;
 import com.schoolitem.listeners.BlockBreakListener;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -13,15 +12,9 @@ public class SchoolItem extends JavaPlugin {
     public void onEnable() {
         instance = this;
         
-        // Register commands với TabCompleter
-        AddAbilityCommand addCmd = new AddAbilityCommand();
-        RemoveAbilityCommand removeCmd = new RemoveAbilityCommand();
-        
-        getCommand("si").setExecutor(addCmd);
-        getCommand("si").setTabCompleter(addCmd);
-        
-        getCommand("si").setExecutor(removeCmd);
-        getCommand("si").setTabCompleter(removeCmd);
+        // Register command
+        getCommand("si").setExecutor(new MainCommand());
+        getCommand("si").setTabCompleter(new MainCommand());
         
         // Register listeners
         getServer().getPluginManager().registerEvents(new DamageListener(), this);
