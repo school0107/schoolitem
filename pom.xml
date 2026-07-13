@@ -9,10 +9,16 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
+    <name>SchoolItem</name>
+    <description>Plugin quản lý abilities cho item Minecraft 1.21+</description>
+    <url>https://github.com/yourusername/SchoolItem</url>
+
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Build number sẽ được cập nhật tự động -->
+        <build.number>${env.BUILD_NUMBER}</build.number>
     </properties>
 
     <repositories>
@@ -32,7 +38,7 @@
     </dependencies>
 
     <build>
-        <finalName>SchoolItem</finalName>
+        <finalName>SchoolItem-${project.version}-build${build.number}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -57,5 +63,11 @@
                 </executions>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
     </build>
 </project>
