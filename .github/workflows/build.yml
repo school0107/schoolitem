@@ -1,0 +1,71 @@
+name: Build SchoolItem Plugin
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+    
+    - name: Get version from pom.xml
+      id: get_version
+      run: |
+        VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+    
+    - name: Get build number
+      id: build_number
+      run: |
+        BUILD_NUM=${{ github.run_number }}
+        echo "build_number=$BUILD_NUM" >> $GITHUB_OUTPUT
+    
+    - name: Create version file
+      run: |
+        echo "VERSION=${{ steps.get_version.outputs.version }}" > version.txt
+        echo "BUILD_NUMBER=${{ steps.build_number.outputs.build_number }}" >> version.txt
+        echo "BUILD_TIME=$(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> version.txt
+        echo "COMMIT_SHA=${{ github.sha }}" >> version.txt
+        echo "BRANCH=${{ github.ref_name }}" >> version.txt
+    
+    - name: Build with Maven
+      run: |
+        export BUILD_NUMBER=${{ steps.build_number.outputs.build_number }}
+        mvn clean package
+      env:
+        BUILD_NUMBER: ${{ steps.build_number.outputs.build_number }}
+    
+    - name: Rename JAR with build number
+      run: |
+        VERSION=${{ steps.get_version.outputs.version }}
+        BUILD_NUM=${{ steps.build_number.outputs.build_number }}
+        mv target/SchoolItem-${VERSION}-build${BUILD_NUM}.jar target/SchoolItem-${VERSION}-build${BUILD_NUM}.jar
+    
+    - name: Upload JAR artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: SchoolItem-${{ steps.get_version.outputs.version }}-build${{ steps.build_number.outputs.build_number }}
+        path: target/SchoolItem-${{ steps.get_version.outputs.version }}-build${{ steps.build_number.outputs.build_number }}.jar
+        retention-days: 30
+    
+    - name: Upload to Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: target/SchoolItem-${{ steps.get_version.outputs.version }}-build${{ steps.build_number.outputs.build_number }}.jar
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
