@@ -1,4 +1,4 @@
-package com.schoolitem;
+package com.schoolitem.commands;
 
 import com.schoolitem.commands.AddAbilityCommand;
 import com.schoolitem.commands.RemoveAbilityCommand;
@@ -13,9 +13,14 @@ public class SchoolItem extends JavaPlugin {
     public void onEnable() {
         instance = this;
         
-        getCommand("si").setExecutor(new AddAbilityCommand());
-        getCommand("si").setExecutor(new RemoveAbilityCommand());
+        // Register commands với TabCompleter
+        AddAbilityCommand addCmd = new AddAbilityCommand();
+        RemoveAbilityCommand removeCmd = new RemoveAbilityCommand();
         
+        getCommand("si").setExecutor(addCmd);
+        getCommand("si").setTabCompleter(addCmd);
+        
+        // Register listeners
         getServer().getPluginManager().registerEvents(new DamageListener(), this);
         getServer().getPluginManager().registerEvents(new BlockBreakListener(), this);
         
