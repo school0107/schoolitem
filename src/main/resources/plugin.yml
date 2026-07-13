@@ -3,7 +3,7 @@ version: ${project.version}
 main: com.schoolitem.SchoolItem
 api-version: 1.21
 authors: [SchoolDev]
-description: Plugin quản lý abilities cho item - Build ${build.number}
+description: Plugin quản lý abilities cho item
 commands:
   si:
     description: Lệnh chính của SchoolItem
@@ -11,7 +11,7 @@ commands:
     permission: schoolitem.admin
 permissions:
   schoolitem.admin:
-    description: Cho phép sử dụng tất cả lệnh của SchoolItem
+    description: Cho phép sử dụng tất cả lệnh
     default: op
   schoolitem.use:
     description: Cho phép sử dụng item có ability
