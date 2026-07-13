@@ -66,31 +66,48 @@ public class AddAbilityCommand implements CommandExecutor, TabCompleter {
         ItemMeta meta = item.getItemMeta();
         List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
         
-        // Xóa ability cũ nếu có
+        // Xóa ability cũ nếu có (bao gồm cả separator)
         List<String> newLore = new ArrayList<>();
         String abilityDisplay = getAbilityDisplay(ability);
         boolean skip = false;
+        boolean found = false;
         
         for (String line : lore) {
-            if (line.contains("§m--------------------------------")) {
+            // Phát hiện separator
+            if (line.contains("§m--------------------------------") || line.contains("&7&m--------------------------------")) {
                 if (!skip) {
+                    // Bắt đầu block ability
                     skip = true;
+                    found = true;
                     continue;
                 } else {
+                    // Kết thúc block ability
                     skip = false;
                     continue;
                 }
             }
+            
             if (skip) {
-                skip = false;
-                continue;
+                // Đang trong block ability, kiểm tra xem có phải ability cần xóa không
+                if (line.contains(abilityDisplay)) {
+                    // Đây là ability cần xóa, bỏ qua toàn bộ block
+                    skip = false; // Kết thúc block
+                    continue;
+                } else {
+                    // Không phải ability cần xóa, giữ lại dòng này
+                    newLore.add(line);
+                    continue;
+                }
             }
-            if (line.contains(abilityDisplay)) {
-                continue;
-            }
+            
+            // Không trong block skip, thêm vào newLore
             newLore.add(line);
         }
-        lore = newLore;
+        
+        // Nếu không tìm thấy ability cũ, dùng lore cũ
+        if (!found) {
+            newLore = lore;
+        }
         
         // Thêm ability mới
         String color = getAbilityColor(ability);
@@ -101,12 +118,12 @@ public class AddAbilityCommand implements CommandExecutor, TabCompleter {
             "Nhân " + value + "x số lượng block" : 
             "Giảm " + value + unit + " sát thương";
         
-        lore.add("§7§m--------------------------------");
-        lore.add(color + emoji + " " + displayName + " §fGiá trị: §e" + value + unit);
-        lore.add("§7✦ §f" + description);
-        lore.add("§7§m--------------------------------");
+        newLore.add("§7§m--------------------------------");
+        newLore.add(color + emoji + " " + displayName + " §fGiá trị: §e" + value + unit);
+        newLore.add("§7✦ §f" + description);
+        newLore.add("§7§m--------------------------------");
         
-        meta.setLore(lore);
+        meta.setLore(newLore);
         item.setItemMeta(meta);
         
         sender.sendMessage(ChatColor.GREEN + "✓ Đã thêm ability " + ability + " với giá trị " + value + unit);

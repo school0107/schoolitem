@@ -20,6 +20,9 @@ public class SchoolItem extends JavaPlugin {
         getCommand("si").setExecutor(addCmd);
         getCommand("si").setTabCompleter(addCmd);
         
+        getCommand("si").setExecutor(removeCmd);
+        getCommand("si").setTabCompleter(removeCmd);
+        
         // Register listeners
         getServer().getPluginManager().registerEvents(new DamageListener(), this);
         getServer().getPluginManager().registerEvents(new BlockBreakListener(), this);
@@ -28,8 +31,8 @@ public class SchoolItem extends JavaPlugin {
         getLogger().info("§aSchoolItem plugin đã được kích hoạt!");
         getLogger().info("§aVersion: " + getDescription().getVersion());
         getLogger().info("§a=========================================");
-        getLogger().info("§eSử dụng /si add <ability> <value> để thêm ability");
-        getLogger().info("§eSử dụng /si remove để xóa ability");
+        getLogger().info("§e/si add <ability> <value> - Thêm ability");
+        getLogger().info("§e/si remove [ability] - Xóa ability");
         getLogger().info("§a=========================================");
     }
 
