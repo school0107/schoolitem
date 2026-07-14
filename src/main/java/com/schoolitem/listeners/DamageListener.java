@@ -9,13 +9,21 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 public class DamageListener implements Listener {
     private final Random random = new Random();
+    private final Map<UUID, Long> woundEffect = new HashMap<>();
+    private final int WOUND_DURATION = 10; // 10 seconds
     
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEntityDamage(EntityDamageByEntityEvent event) {
@@ -53,7 +61,6 @@ public class DamageListener implements Listener {
                     
                     if (reflectDamage > 0 && random.nextDouble() * 100 < thornsValue) {
                         attacker.damage(reflectDamage);
-                        // Hiệu ứng âm thanh
                         if (attacker instanceof Player) {
                             ((Player) attacker).playSound(attacker.getLocation(), Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
                         }
@@ -65,7 +72,7 @@ public class DamageListener implements Listener {
             }
         }
         
-        // ===== Lifesteal (Hút máu) & HungerSteal (Hút thức ăn) =====
+        // ===== Lifesteal, HungerSteal, Wound =====
         if (damager instanceof Player player) {
             ItemStack item = player.getInventory().getItemInMainHand();
             if (item != null && item.hasItemMeta() && victim instanceof LivingEntity) {
@@ -75,41 +82,107 @@ public class DamageListener implements Listener {
                 // Lifesteal
                 double lifestealValue = getAbilityValueFromItem(item, "lifesteal");
                 if (lifestealValue > 0 && random.nextDouble() * 100 < lifestealValue) {
-                    double healAmount = damage * (lifestealValue / 100.0);
+                    // Kiểm tra target có đang bị Wound không
+                    double healMultiplier = getHealMultiplier(target);
+                    double healAmount = damage * (lifestealValue / 100.0) * healMultiplier;
+                    
                     if (healAmount > 0) {
                         double newHealth = Math.min(player.getHealth() + healAmount, player.getMaxHealth());
                         player.setHealth(newHealth);
-                        // Hiệu ứng âm thanh
                         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.5f);
                         player.playSound(target.getLocation(), Sound.ENTITY_GENERIC_DRINK, 0.5f, 1.0f);
                     }
                 }
                 
-                // HungerSteal (Hút thanh thức ăn)
+                // HungerSteal
                 double hungerValue = getAbilityValueFromItem(item, "hungersteal");
                 if (hungerValue > 0 && random.nextDouble() * 100 < hungerValue) {
                     if (target instanceof Player) {
                         Player targetPlayer = (Player) target;
-                        // Giảm thức ăn của đối phương
                         int foodToSteal = (int) Math.ceil(hungerValue / 10.0);
                         if (foodToSteal > 0) {
                             int targetFood = targetPlayer.getFoodLevel();
                             int newTargetFood = Math.max(0, targetFood - foodToSteal);
                             targetPlayer.setFoodLevel(newTargetFood);
                             
-                            // Tăng thức ăn cho người dùng
                             int playerFood = player.getFoodLevel();
                             int newPlayerFood = Math.min(20, playerFood + foodToSteal);
                             player.setFoodLevel(newPlayerFood);
                             
-                            // Hiệu ứng âm thanh
                             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_BURP, 1.0f, 1.0f);
                             targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_PLAYER_HURT, 1.0f, 0.5f);
                         }
                     }
                 }
+                
+                // ===== Wound (Vết thương) =====
+                double woundValue = getAbilityValueFromItem(item, "wound");
+                if (woundValue > 0 && random.nextDouble() * 100 < 10.0) { // 10% tỉ lệ kích hoạt
+                    if (target instanceof Player) {
+                        Player targetPlayer = (Player) target;
+                        UUID targetId = targetPlayer.getUniqueId();
+                        
+                        // Áp dụng hiệu ứng Wound
+                        woundEffect.put(targetId, System.currentTimeMillis() + WOUND_DURATION * 1000);
+                        
+                        // Hiệu ứng âm thanh
+                        targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_WITHER_SHOOT, 1.0f, 0.5f);
+                        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 1.0f);
+                        
+                        // Hiển thị thông báo
+                        targetPlayer.sendMessage("§c🩸 Bạn đã bị Vết Thương! Giảm " + woundValue + "% khả năng hồi máu trong " + WOUND_DURATION + "s!");
+                        player.sendMessage("§a🩸 Đã gây Vết Thương lên " + targetPlayer.getName() + "!");
+                    }
+                }
             }
         }
+    }
+    
+    // ===== Ngăn hồi máu/hút máu khi đang bị Wound =====
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onEntityRegainHealth(EntityRegainHealthEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (event.isCancelled()) return;
+        
+        UUID playerId = player.getUniqueId();
+        if (!woundEffect.containsKey(playerId)) return;
+        
+        long expireTime = woundEffect.get(playerId);
+        if (System.currentTimeMillis() > expireTime) {
+            woundEffect.remove(playerId);
+            return;
+        }
+        
+        // Giảm lượng hồi máu
+        double healAmount = event.getAmount();
+        double woundValue = getWoundValue(player);
+        if (woundValue > 0) {
+            double reducedHeal = healAmount * (1 - woundValue / 100.0);
+            event.setAmount(reducedHeal);
+        }
+    }
+    
+    private double getHealMultiplier(LivingEntity entity) {
+        if (!(entity instanceof Player)) return 1.0;
+        Player player = (Player) entity;
+        UUID playerId = player.getUniqueId();
+        
+        if (!woundEffect.containsKey(playerId)) return 1.0;
+        long expireTime = woundEffect.get(playerId);
+        if (System.currentTimeMillis() > expireTime) {
+            woundEffect.remove(playerId);
+            return 1.0;
+        }
+        
+        double woundValue = getWoundValue(player);
+        return 1.0 - (woundValue / 100.0);
+    }
+    
+    private double getWoundValue(Player player) {
+        // Lấy giá trị Wound từ item đang cầm (nếu có)
+        ItemStack item = player.getInventory().getItemInMainHand();
+        if (item == null || !item.hasItemMeta()) return 0;
+        return getAbilityValueFromItem(item, "wound");
     }
     
     private double getAbilityValueFromItem(ItemStack item, String ability) {
@@ -141,6 +214,7 @@ public class DamageListener implements Listener {
             case "lifesteal": return "Hút Máu";
             case "thorns": return "Phản Sát Thương";
             case "hungersteal": return "Hút Thanh Thức Ăn";
+            case "wound": return "Vết Thương";
             default: return ability;
         }
     }

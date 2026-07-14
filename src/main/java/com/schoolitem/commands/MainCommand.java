@@ -16,7 +16,10 @@ import java.util.List;
 
 public class MainCommand implements CommandExecutor, TabCompleter {
     
-    private final List<String> abilities = Arrays.asList("pve", "pvp", "multiplierblock", "lifesteal", "thorns", "hungersteal");
+    private final List<String> abilities = Arrays.asList(
+        "pve", "pvp", "multiplierblock", 
+        "lifesteal", "thorns", "hungersteal", "wound"
+    );
     
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -50,8 +53,8 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private boolean handleAdd(Player player, String[] args) {
         if (args.length < 3) {
             player.sendMessage(ChatColor.RED + "Sử dụng: /si add <ability> <value>");
-            player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal");
-            player.sendMessage(ChatColor.YELLOW + "Ví dụ: /si add lifesteal 30");
+            player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal, wound");
+            player.sendMessage(ChatColor.YELLOW + "Ví dụ: /si add wound 30");
             return true;
         }
         
@@ -70,7 +73,8 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         }
         
         // Giới hạn giá trị cho từng ability
-        if (ability.equals("lifesteal") || ability.equals("thorns") || ability.equals("hungersteal")) {
+        if (ability.equals("lifesteal") || ability.equals("thorns") || 
+            ability.equals("hungersteal") || ability.equals("wound")) {
             if (value > 100) {
                 player.sendMessage(ChatColor.RED + "Giá trị tối đa là 100%!");
                 return true;
@@ -79,7 +83,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         
         if (!abilities.contains(ability)) {
             player.sendMessage(ChatColor.RED + "Ability không hợp lệ!");
-            player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal");
+            player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal, wound");
             return true;
         }
         
@@ -169,7 +173,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             targetAbility = args[1].toLowerCase();
             if (!abilities.contains(targetAbility)) {
                 player.sendMessage(ChatColor.RED + "Ability không hợp lệ!");
-                player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal");
+                player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal, wound");
                 return true;
             }
         }
@@ -252,10 +256,10 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.GOLD + "===== SchoolItem Help =====");
         sender.sendMessage(ChatColor.YELLOW + "/si add <ability> <value> - Thêm ability");
         sender.sendMessage(ChatColor.YELLOW + "  ability: pve, pvp, multiplierblock");
-        sender.sendMessage(ChatColor.YELLOW + "           lifesteal, thorns, hungersteal");
-        sender.sendMessage(ChatColor.YELLOW + "  Ví dụ: /si add lifesteal 30");
+        sender.sendMessage(ChatColor.YELLOW + "           lifesteal, thorns, hungersteal, wound");
+        sender.sendMessage(ChatColor.YELLOW + "  Ví dụ: /si add wound 30");
         sender.sendMessage(ChatColor.YELLOW + "/si remove [ability] - Xóa ability");
-        sender.sendMessage(ChatColor.YELLOW + "  Ví dụ: /si remove lifesteal");
+        sender.sendMessage(ChatColor.YELLOW + "  Ví dụ: /si remove wound");
         sender.sendMessage(ChatColor.YELLOW + "  Hoặc: /si remove (xóa tất cả)");
     }
     
@@ -267,6 +271,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             case "lifesteal": return "Hút Máu";
             case "thorns": return "Phản Sát Thương";
             case "hungersteal": return "Hút Thanh Thức Ăn";
+            case "wound": return "Vết Thương";
             default: return ability;
         }
     }
@@ -279,6 +284,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             case "lifesteal": return "§d";
             case "thorns": return "§4";
             case "hungersteal": return "§e";
+            case "wound": return "§5";
             default: return "§f";
         }
     }
@@ -291,6 +297,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             case "lifesteal": return "❤️";
             case "thorns": return "🌵";
             case "hungersteal": return "🍖";
+            case "wound": return "🩸";
             default: return "✦";
         }
     }
@@ -303,6 +310,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             case "lifesteal": return "Hút " + value + "% sát thương gây ra thành máu";
             case "thorns": return "Phản " + value + "% sát thương nhận vào";
             case "hungersteal": return "Hút " + value + "% thanh thức ăn của đối phương";
+            case "wound": return "Giảm " + value + "% khả năng hồi máu/hút máu của đối phương trong 10s (10% tỉ lệ)";
             default: return "";
         }
     }
@@ -341,7 +349,8 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                 completions.add("3");
                 completions.add("5");
                 completions.add("10");
-            } else if (ability.equals("lifesteal") || ability.equals("thorns") || ability.equals("hungersteal")) {
+            } else if (ability.equals("lifesteal") || ability.equals("thorns") || 
+                       ability.equals("hungersteal") || ability.equals("wound")) {
                 completions.add("20");
                 completions.add("30");
                 completions.add("50");
