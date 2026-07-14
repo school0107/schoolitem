@@ -9,11 +9,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 
 import java.util.Random;
 
@@ -94,7 +91,7 @@ public class DamageListener implements Listener {
                     if (target instanceof Player) {
                         Player targetPlayer = (Player) target;
                         // Giảm thức ăn của đối phương
-                        int foodToSteal = (int) Math.ceil(hungerValue / 10.0); // 10% = 1 food point
+                        int foodToSteal = (int) Math.ceil(hungerValue / 10.0);
                         if (foodToSteal > 0) {
                             int targetFood = targetPlayer.getFoodLevel();
                             int newTargetFood = Math.max(0, targetFood - foodToSteal);
@@ -108,16 +105,6 @@ public class DamageListener implements Listener {
                             // Hiệu ứng âm thanh
                             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_BURP, 1.0f, 1.0f);
                             targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_PLAYER_HURT, 1.0f, 0.5f);
-                            
-                            // Hiệu ứng hạt (particle effect) 
-                            if (targetPlayer.getWorld() != null) {
-                                targetPlayer.getWorld().spawnParticle(
-                                    org.bukkit.Particle.ITEM_CRACK,
-                                    targetPlayer.getLocation().add(0, 1, 0),
-                                    10, 0.3, 0.3, 0.3, 0.1,
-                                    org.bukkit.Material.COOKED_BEEF.createItemData()
-                                );
-                            }
                         }
                     }
                 }
