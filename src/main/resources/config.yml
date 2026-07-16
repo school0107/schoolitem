@@ -1,59 +1,109 @@
+# ============================================
 # SchoolItem Plugin Configuration
+# ============================================
 
+# Cấu hình abilities
 abilities:
+  # Giảm sát thương từ quái vật
   pve:
     enabled: true
     min-value: 0.0
     max-value: 100.0
-    display-name: "Giảm Sát Thương PVE"
-    color: "&#FF6B6B"
+    display-name: "Giảm sát thương PvE"
+    color: "§c"
     emoji: "⚔️"
     unit: "%"
-    description: "Giảm {value}% sát thương từ quái vật"
     
+  # Giảm sát thương từ người chơi
   pvp:
     enabled: true
     min-value: 0.0
     max-value: 100.0
-    display-name: "Giảm Sát Thương PVP"
-    color: "&#FFA94D"
+    display-name: "Giảm sát thương PvP"
+    color: "§6"
     emoji: "🛡️"
     unit: "%"
-    description: "Giảm {value}% sát thương từ người chơi"
     
+  # Nhân số lượng block
   multiplierblock:
     enabled: true
     min-value: 1.0
     max-value: 100.0
     display-name: "Nhân Block"
-    color: "&#69DB7C"
+    color: "§a"
     emoji: "⛏️"
     unit: "x"
-    description: "Nhân {value}x số lượng block khi đào"
+    
+  # Hút máu
+  lifesteal:
+    enabled: true
+    min-value: 0.0
+    max-value: 100.0
+    display-name: "Hút Máu"
+    color: "§d"
+    emoji: "❤️"
+    unit: "%"
+    chance: 100.0
+    
+  # Phản sát thương
+  thorns:
+    enabled: true
+    min-value: 0.0
+    max-value: 100.0
+    display-name: "Phản Đòn"
+    color: "§4"
+    emoji: "🌵"
+    unit: "%"
+    chance: 100.0
+    
+  # Hút thanh thức ăn
+  hungersteal:
+    enabled: true
+    min-value: 0.0
+    max-value: 100.0
+    display-name: "Hút Thức Ăn"
+    color: "§e"
+    emoji: "🍖"
+    unit: "%"
+    chance: 100.0
+    
+  # Vết thương - Giảm hồi máu
+  wound:
+    enabled: true
+    min-value: 0.0
+    max-value: 100.0
+    display-name: "Giảm hồi máu"
+    color: "§5"
+    emoji: "🩸"
+    unit: "%"
+    chance: 10.0
+    duration: 10
 
+# Cài đặt chung
 settings:
-  enable-message: true
-  message-prefix: "&8[&6SchoolItem&8] &r"
-  enable-particle-effect: false
-  enable-sound-effect: false
+  message-prefix: "§8[§6SchoolItem§8] §r"
+  sound-effects: true
+  particle-effects: false
   disabled-worlds: []
-  lore-separator: "&7&m--------------------------------"
-  lore-format: "&{color}{emoji} {display-name} &fGiá trị: &e{value}{unit}"
-  lore-description: "&7✦ &f{description}"
 
-item-filter:
-  whitelist-mode: true
-  allowed-items:
-    - "DIAMOND_SWORD"
-    - "NETHERITE_SWORD"
-    - "DIAMOND_PICKAXE"
-    - "NETHERITE_PICKAXE"
-    - "DIAMOND_AXE"
-    - "NETHERITE_AXE"
-    - "BOW"
-    - "CROSSBOW"
-    - "SHIELD"
-  blocked-items:
-    - "AIR"
-    - "BEDROCK"
-    - "COMMAND_BLOCK"
+# ============================================
+# ĐỊNH DẠNG LORE - Chỉ 1 dòng ngắn gọn
+# ============================================
+lore-format: "{emoji} {color}{display-name} §f: §e{value}{unit}"
+
+# ============================================
+# HIỆU ỨNG ÂM THANH
+# ============================================
+sounds:
+  lifesteal:
+    attacker: "ENTITY_PLAYER_LEVELUP"
+    target: "ENTITY_GENERIC_DRINK"
+  thorns:
+    attacker: "ENTITY_ITEM_BREAK"
+    target: "ENTITY_PLAYER_HURT"
+  hungersteal:
+    attacker: "ENTITY_PLAYER_BURP"
+    target: "ENTITY_PLAYER_HURT"
+  wound:
+    attacker: "ENTITY_PLAYER_ATTACK_SWEEP"
+    target: "ENTITY_WITHER_SHOOT"

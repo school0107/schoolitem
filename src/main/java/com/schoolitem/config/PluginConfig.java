@@ -5,7 +5,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,105 +13,130 @@ public class PluginConfig {
     private final SchoolItem plugin;
     private FileConfiguration config;
     private File configFile;
-    
-    private boolean enablePve;
-    private boolean enablePvp;
-    private boolean enableMultiplierBlock;
+    private Map<String, Boolean> abilityEnabled;
+    private Map<String, Double> abilityMin;
+    private Map<String, Double> abilityMax;
+    private Map<String, Double> abilityChance;
+    private Map<String, Integer> abilityDuration;
     private String messagePrefix;
-    private Map<String, Double> abilityLimits;
+    private boolean soundEffects;
+    private boolean particleEffects;
     private List<String> disabledWorlds;
-    
+    private String loreFormat;
+    private Map<String, Map<String, String>> sounds;
+
     public PluginConfig(SchoolItem plugin) {
         this.plugin = plugin;
         this.configFile = new File(plugin.getDataFolder(), "config.yml");
-        this.abilityLimits = new HashMap<>();
+        this.abilityEnabled = new HashMap<>();
+        this.abilityMin = new HashMap<>();
+        this.abilityMax = new HashMap<>();
+        this.abilityChance = new HashMap<>();
+        this.abilityDuration = new HashMap<>();
+        this.sounds = new HashMap<>();
         reloadConfig();
     }
-    
+
     public void reloadConfig() {
         if (!configFile.exists()) {
             plugin.saveResource("config.yml", false);
         }
-        
+
         config = YamlConfiguration.loadConfiguration(configFile);
+
+        // Load ability settings
+        String[] abilities = {"pve", "pvp", "multiplierblock", "lifesteal", "thorns", "hungersteal", "wound"};
         
+        for (String ability : abilities) {
+            abilityEnabled.put(ability, config.getBoolean("abilities." + ability + ".enabled", true));
+            abilityMin.put(ability, config.getDouble("abilities." + ability + ".min-value", 0.0));
+            abilityMax.put(ability, config.getDouble("abilities." + ability + ".max-value", 100.0));
+            abilityChance.put(ability, config.getDouble("abilities." + ability + ".chance", 100.0));
+            abilityDuration.put(ability, config.getInt("abilities." + ability + ".duration", 10));
+        }
+
         // Load settings
-        enablePve = config.getBoolean("abilities.pve.enabled", true);
-        enablePvp = config.getBoolean("abilities.pvp.enabled", true);
-        enableMultiplierBlock = config.getBoolean("abilities.multiplierblock.enabled", true);
-        
-        messagePrefix = config.getString("settings.message-prefix", "&8[&6SchoolItem&8] &r");
-        
-        abilityLimits.put("pve.min", config.getDouble("abilities.pve.min-value", 0.0));
-        abilityLimits.put("pve.max", config.getDouble("abilities.pve.max-value", 100.0));
-        abilityLimits.put("pvp.min", config.getDouble("abilities.pvp.min-value", 0.0));
-        abilityLimits.put("pvp.max", config.getDouble("abilities.pvp.max-value", 100.0));
-        abilityLimits.put("multiplierblock.min", config.getDouble("abilities.multiplierblock.min-value", 1.0));
-        abilityLimits.put("multiplierblock.max", config.getDouble("abilities.multiplierblock.max-value", 100.0));
-        
+        messagePrefix = config.getString("settings.message-prefix", "§8[§6SchoolItem§8] §r");
+        soundEffects = config.getBoolean("settings.sound-effects", true);
+        particleEffects = config.getBoolean("settings.particle-effects", false);
         disabledWorlds = config.getStringList("settings.disabled-worlds");
-        if (disabledWorlds == null) {
-            disabledWorlds = new ArrayList<>();
+        
+        // Load lore format
+        loreFormat = config.getString("lore-format", "{emoji} {color}{display-name} §7| §fGiá trị: §e{value}{unit}");
+
+        // Load sounds
+        String[] soundAbilities = {"lifesteal", "thorns", "hungersteal", "wound"};
+        for (String ability : soundAbilities) {
+            Map<String, String> soundMap = new HashMap<>();
+            soundMap.put("attacker", config.getString("sounds." + ability + ".attacker", ""));
+            soundMap.put("target", config.getString("sounds." + ability + ".target", ""));
+            sounds.put(ability, soundMap);
         }
     }
-    
-    public boolean isEnablePve() {
-        return enablePve;
+
+    public boolean isAbilityEnabled(String ability) {
+        return abilityEnabled.getOrDefault(ability, true);
     }
-    
-    public boolean isEnablePvp() {
-        return enablePvp;
+
+    public double getAbilityMin(String ability) {
+        return abilityMin.getOrDefault(ability, 0.0);
     }
-    
-    public boolean isEnableMultiplierBlock() {
-        return enableMultiplierBlock;
+
+    public double getAbilityMax(String ability) {
+        return abilityMax.getOrDefault(ability, 100.0);
     }
-    
+
+    public double getAbilityChance(String ability) {
+        return abilityChance.getOrDefault(ability, 100.0);
+    }
+
+    public int getAbilityDuration(String ability) {
+        return abilityDuration.getOrDefault(ability, 0);
+    }
+
     public String getMessagePrefix() {
         return messagePrefix;
     }
-    
-    public double getAbilityMin(String ability) {
-        return abilityLimits.getOrDefault(ability + ".min", 0.0);
+
+    public boolean isSoundEffects() {
+        return soundEffects;
     }
-    
-    public double getAbilityMax(String ability) {
-        return abilityLimits.getOrDefault(ability + ".max", 100.0);
+
+    public boolean isParticleEffects() {
+        return particleEffects;
     }
-    
+
     public List<String> getDisabledWorlds() {
         return disabledWorlds;
     }
-    
-    public FileConfiguration getConfig() {
-        return config;
+
+    public String getLoreFormat() {
+        return loreFormat;
     }
-    
+
     public String getAbilityDisplayName(String ability) {
         return config.getString("abilities." + ability + ".display-name", ability);
     }
-    
+
     public String getAbilityColor(String ability) {
-        return config.getString("abilities." + ability + ".color", "&f");
+        return config.getString("abilities." + ability + ".color", "§f");
     }
-    
+
     public String getAbilityEmoji(String ability) {
         return config.getString("abilities." + ability + ".emoji", "✦");
     }
-    
+
     public String getAbilityUnit(String ability) {
         return config.getString("abilities." + ability + ".unit", "");
     }
-    
-    public String getLoreSeparator() {
-        return config.getString("settings.lore-separator", "&7&m--------------------------------");
+
+    public String getSound(String ability, String type) {
+        Map<String, String> soundMap = sounds.get(ability);
+        if (soundMap == null) return "";
+        return soundMap.getOrDefault(type, "");
     }
-    
-    public String getLoreFormat() {
-        return config.getString("settings.lore-format", "&{color}{emoji} {display-name} &fGiá trị: &e{value}{unit}");
-    }
-    
-    public String getLoreDescription() {
-        return config.getString("settings.lore-description", "&7✦ &f{description}");
+
+    public FileConfiguration getConfig() {
+        return config;
     }
 }

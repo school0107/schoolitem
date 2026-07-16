@@ -7,7 +7,7 @@ description: Plugin quản lý abilities cho item
 commands:
   si:
     description: Lệnh chính của SchoolItem
-    usage: /<command> <add|remove> [ability] [value]
+    usage: /<command> <add|remove|reload> [ability] [value]
     permission: schoolitem.admin
 permissions:
   schoolitem.admin:

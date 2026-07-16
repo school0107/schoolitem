@@ -1,5 +1,7 @@
 package com.schoolitem.commands;
 
+import com.schoolitem.SchoolItem;
+import com.schoolitem.config.PluginConfig;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -16,10 +18,17 @@ import java.util.List;
 
 public class MainCommand implements CommandExecutor, TabCompleter {
     
+    private final SchoolItem plugin;
+    private final PluginConfig config;
     private final List<String> abilities = Arrays.asList(
         "pve", "pvp", "multiplierblock", 
         "lifesteal", "thorns", "hungersteal", "wound"
     );
+    
+    public MainCommand(SchoolItem plugin) {
+        this.plugin = plugin;
+        this.config = plugin.getPluginConfig();
+    }
     
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -29,7 +38,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         }
         
         if (!player.hasPermission("schoolitem.admin")) {
-            sender.sendMessage(ChatColor.RED + "Bạn không có quyền sử dụng lệnh này!");
+            sender.sendMessage(config.getMessagePrefix() + ChatColor.RED + "Bạn không có quyền sử dụng lệnh này!");
             return true;
         }
         
@@ -40,7 +49,11 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         
         String subCommand = args[0].toLowerCase();
         
-        if (subCommand.equals("add")) {
+        if (subCommand.equals("reload")) {
+            plugin.reloadConfig();
+            sender.sendMessage(config.getMessagePrefix() + ChatColor.GREEN + "✓ Config đã được reload!");
+            return true;
+        } else if (subCommand.equals("add")) {
             return handleAdd(player, args);
         } else if (subCommand.equals("remove")) {
             return handleRemove(player, args);
@@ -54,7 +67,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         if (args.length < 3) {
             player.sendMessage(ChatColor.RED + "Sử dụng: /si add <ability> <value>");
             player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal, wound");
-            player.sendMessage(ChatColor.YELLOW + "Ví dụ: /si add wound 30");
+            player.sendMessage(ChatColor.YELLOW + "Ví dụ: /si add lifesteal 30");
             return true;
         }
         
@@ -67,18 +80,17 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         
-        if (value < 0) {
-            player.sendMessage(ChatColor.RED + "Giá trị không được âm!");
+        if (!config.isAbilityEnabled(ability)) {
+            player.sendMessage(config.getMessagePrefix() + ChatColor.RED + "Ability " + ability + " đã bị tắt trong config!");
             return true;
         }
         
-        // Giới hạn giá trị cho từng ability
-        if (ability.equals("lifesteal") || ability.equals("thorns") || 
-            ability.equals("hungersteal") || ability.equals("wound")) {
-            if (value > 100) {
-                player.sendMessage(ChatColor.RED + "Giá trị tối đa là 100%!");
-                return true;
-            }
+        double minValue = config.getAbilityMin(ability);
+        double maxValue = config.getAbilityMax(ability);
+        
+        if (value < minValue || value > maxValue) {
+            player.sendMessage(ChatColor.RED + "Giá trị phải từ " + minValue + " đến " + maxValue + "!");
+            return true;
         }
         
         if (!abilities.contains(ability)) {
@@ -98,57 +110,52 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         
         // Xóa ability cũ nếu có
         List<String> newLore = new ArrayList<>();
-        String abilityDisplay = getAbilityDisplay(ability);
-        boolean inAbilityBlock = false;
-        boolean skipBlock = false;
+        String abilityDisplay = config.getAbilityDisplayName(ability);
+        boolean skip = false;
         
-        for (int i = 0; i < lore.size(); i++) {
-            String line = lore.get(i);
-            
-            if (line.contains("§m--------------------------------") || line.contains("&7&m--------------------------------")) {
-                if (!inAbilityBlock) {
-                    inAbilityBlock = true;
-                    if (i + 1 < lore.size() && lore.get(i + 1).contains(abilityDisplay)) {
-                        skipBlock = true;
-                        continue;
-                    } else {
-                        newLore.add(line);
-                        continue;
-                    }
-                } else {
-                    inAbilityBlock = false;
-                    if (skipBlock) {
-                        skipBlock = false;
-                        continue;
-                    }
-                    newLore.add(line);
-                    continue;
-                }
-            }
-            
-            if (inAbilityBlock && skipBlock) {
+        for (String line : lore) {
+            if (line.contains(abilityDisplay)) {
+                skip = true;
                 continue;
             }
-            
+            if (skip) {
+                skip = false;
+                continue;
+            }
             newLore.add(line);
         }
         
-        // Thêm ability mới
-        String color = getAbilityColor(ability);
-        String emoji = getAbilityEmoji(ability);
-        String displayName = getAbilityDisplay(ability);
-        String unit = ability.equals("multiplierblock") ? "x" : "%";
-        String description = getAbilityDescription(ability, value);
+        // Thêm ability mới - CHỈ 1 DÒNG
+        String color = config.getAbilityColor(ability);
+        String emoji = config.getAbilityEmoji(ability);
+        String displayName = config.getAbilityDisplayName(ability);
+        String unit = config.getAbilityUnit(ability);
         
-        newLore.add("§7§m--------------------------------");
-        newLore.add(color + emoji + " " + displayName + " §fGiá trị: §e" + value + unit);
-        newLore.add("§7✦ §f" + description);
-        newLore.add("§7§m--------------------------------");
+        String loreLine = config.getLoreFormat()
+                .replace("{color}", color)
+                .replace("{emoji}", emoji)
+                .replace("{display-name}", displayName)
+                .replace("{value}", String.valueOf(value))
+                .replace("{unit}", unit);
+        
+        // Thêm tỉ lệ nếu có
+        double chance = config.getAbilityChance(ability);
+        if (chance < 100) {
+            loreLine += " §7| §fTỉ lệ: §e" + chance + "%";
+        }
+        
+        // Thêm thời gian nếu có (wound)
+        int duration = config.getAbilityDuration(ability);
+        if (duration > 0 && ability.equals("wound")) {
+            loreLine += " §7| §fThời gian: §e" + duration + "s";
+        }
+        
+        newLore.add(loreLine);
         
         meta.setLore(newLore);
         item.setItemMeta(meta);
         
-        player.sendMessage(ChatColor.GREEN + "✓ Đã thêm ability " + ability + " với giá trị " + value + unit);
+        player.sendMessage(config.getMessagePrefix() + ChatColor.GREEN + "✓ Đã thêm ability " + ability + " với giá trị " + value + unit);
         return true;
     }
     
@@ -173,50 +180,22 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             targetAbility = args[1].toLowerCase();
             if (!abilities.contains(targetAbility)) {
                 player.sendMessage(ChatColor.RED + "Ability không hợp lệ!");
-                player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal, wound");
                 return true;
             }
         }
         
         boolean removed = false;
-        boolean inAbilityBlock = false;
-        boolean skipBlock = false;
-        String abilityDisplay = targetAbility != null ? getAbilityDisplay(targetAbility) : null;
+        String abilityDisplay = targetAbility != null ? config.getAbilityDisplayName(targetAbility) : null;
         
-        for (int i = 0; i < lore.size(); i++) {
-            String line = lore.get(i);
-            
-            if (line.contains("§m--------------------------------") || line.contains("&7&m--------------------------------")) {
-                if (!inAbilityBlock) {
-                    inAbilityBlock = true;
-                    if (i + 1 < lore.size()) {
-                        if (targetAbility == null) {
-                            skipBlock = true;
-                            removed = true;
-                            continue;
-                        } else if (lore.get(i + 1).contains(abilityDisplay)) {
-                            skipBlock = true;
-                            removed = true;
-                            continue;
-                        }
-                    }
-                    newLore.add(line);
-                    continue;
-                } else {
-                    inAbilityBlock = false;
-                    if (skipBlock) {
-                        skipBlock = false;
-                        continue;
-                    }
-                    newLore.add(line);
-                    continue;
-                }
-            }
-            
-            if (inAbilityBlock && skipBlock) {
+        for (String line : lore) {
+            if (targetAbility == null) {
+                // Xóa tất cả
+                removed = true;
+                continue;
+            } else if (line.contains(abilityDisplay)) {
+                removed = true;
                 continue;
             }
-            
             newLore.add(line);
         }
         
@@ -229,25 +208,18 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         
-        List<String> finalLore = new ArrayList<>();
-        for (String line : newLore) {
-            if (!line.trim().isEmpty()) {
-                finalLore.add(line);
-            }
-        }
-        
-        if (finalLore.isEmpty()) {
+        if (newLore.isEmpty()) {
             meta.setLore(null);
         } else {
-            meta.setLore(finalLore);
+            meta.setLore(newLore);
         }
         
         item.setItemMeta(meta);
         
         if (targetAbility != null) {
-            player.sendMessage(ChatColor.GREEN + "✓ Đã xóa ability " + targetAbility + " khỏi item!");
+            player.sendMessage(config.getMessagePrefix() + ChatColor.GREEN + "✓ Đã xóa ability " + targetAbility + " khỏi item!");
         } else {
-            player.sendMessage(ChatColor.GREEN + "✓ Đã xóa tất cả ability khỏi item!");
+            player.sendMessage(config.getMessagePrefix() + ChatColor.GREEN + "✓ Đã xóa tất cả ability khỏi item!");
         }
         return true;
     }
@@ -257,62 +229,10 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.YELLOW + "/si add <ability> <value> - Thêm ability");
         sender.sendMessage(ChatColor.YELLOW + "  ability: pve, pvp, multiplierblock");
         sender.sendMessage(ChatColor.YELLOW + "           lifesteal, thorns, hungersteal, wound");
-        sender.sendMessage(ChatColor.YELLOW + "  Ví dụ: /si add wound 30");
+        sender.sendMessage(ChatColor.YELLOW + "  Ví dụ: /si add lifesteal 30");
         sender.sendMessage(ChatColor.YELLOW + "/si remove [ability] - Xóa ability");
-        sender.sendMessage(ChatColor.YELLOW + "  Ví dụ: /si remove wound");
-        sender.sendMessage(ChatColor.YELLOW + "  Hoặc: /si remove (xóa tất cả)");
-    }
-    
-    private String getAbilityDisplay(String ability) {
-        switch (ability) {
-            case "pve": return "Giảm Sát Thương PVE";
-            case "pvp": return "Giảm Sát Thương PVP";
-            case "multiplierblock": return "Nhân Block";
-            case "lifesteal": return "Hút Máu";
-            case "thorns": return "Phản Sát Thương";
-            case "hungersteal": return "Hút Thanh Thức Ăn";
-            case "wound": return "Vết Thương";
-            default: return ability;
-        }
-    }
-    
-    private String getAbilityColor(String ability) {
-        switch (ability) {
-            case "pve": return "§c";
-            case "pvp": return "§6";
-            case "multiplierblock": return "§a";
-            case "lifesteal": return "§d";
-            case "thorns": return "§4";
-            case "hungersteal": return "§e";
-            case "wound": return "§5";
-            default: return "§f";
-        }
-    }
-    
-    private String getAbilityEmoji(String ability) {
-        switch (ability) {
-            case "pve": return "⚔️";
-            case "pvp": return "🛡️";
-            case "multiplierblock": return "⛏️";
-            case "lifesteal": return "❤️";
-            case "thorns": return "🌵";
-            case "hungersteal": return "🍖";
-            case "wound": return "🩸";
-            default: return "✦";
-        }
-    }
-    
-    private String getAbilityDescription(String ability, double value) {
-        switch (ability) {
-            case "pve": return "Giảm " + value + "% sát thương từ quái vật";
-            case "pvp": return "Giảm " + value + "% sát thương từ người chơi";
-            case "multiplierblock": return "Nhân " + value + "x số lượng block";
-            case "lifesteal": return "Hút " + value + "% sát thương gây ra thành máu";
-            case "thorns": return "Phản " + value + "% sát thương nhận vào";
-            case "hungersteal": return "Hút " + value + "% thanh thức ăn của đối phương";
-            case "wound": return "Giảm " + value + "% khả năng hồi máu/hút máu của đối phương trong 10s (10% tỉ lệ)";
-            default: return "";
-        }
+        sender.sendMessage(ChatColor.YELLOW + "  Ví dụ: /si remove lifesteal");
+        sender.sendMessage(ChatColor.YELLOW + "/si reload - Reload config");
     }
     
     @Override
@@ -320,7 +240,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
         
         if (args.length == 1) {
-            List<String> subCommands = Arrays.asList("add", "remove");
+            List<String> subCommands = Arrays.asList("add", "remove", "reload");
             for (String sub : subCommands) {
                 if (sub.startsWith(args[0].toLowerCase())) {
                     completions.add(sub);
