@@ -18,11 +18,13 @@ public class PluginConfig {
     private Map<String, Double> abilityMax;
     private Map<String, Double> abilityChance;
     private Map<String, Integer> abilityDuration;
+    private Map<String, String> abilityColor;
     private String messagePrefix;
     private boolean soundEffects;
     private boolean particleEffects;
     private List<String> disabledWorlds;
     private String loreFormat;
+    private Map<String, String> colors;
     private Map<String, Map<String, String>> sounds;
 
     public PluginConfig(SchoolItem plugin) {
@@ -33,6 +35,8 @@ public class PluginConfig {
         this.abilityMax = new HashMap<>();
         this.abilityChance = new HashMap<>();
         this.abilityDuration = new HashMap<>();
+        this.abilityColor = new HashMap<>();
+        this.colors = new HashMap<>();
         this.sounds = new HashMap<>();
         reloadConfig();
     }
@@ -53,16 +57,26 @@ public class PluginConfig {
             abilityMax.put(ability, config.getDouble("abilities." + ability + ".max-value", 100.0));
             abilityChance.put(ability, config.getDouble("abilities." + ability + ".chance", 100.0));
             abilityDuration.put(ability, config.getInt("abilities." + ability + ".duration", 10));
+            abilityColor.put(ability, config.getString("abilities." + ability + ".color", "&f"));
         }
 
         // Load settings
-        messagePrefix = config.getString("settings.message-prefix", "§8[§6SchoolItem§8] §r");
+        messagePrefix = config.getString("settings.message-prefix", "&#FFD700[SchoolItem] &r");
         soundEffects = config.getBoolean("settings.sound-effects", true);
-        particleEffects = config.getBoolean("settings.particle-effects", false);
+        particleEffects = config.getBoolean("settings.particle-effects", true);
         disabledWorlds = config.getStringList("settings.disabled-worlds");
         
         // Load lore format
-        loreFormat = config.getString("lore-format", "{emoji} {color}{display-name} §7| §fGiá trị: §e{value}{unit}");
+        loreFormat = config.getString("lore-format", "{emoji} {color}{display-name} &7| &fGiá trị: {color}{value}{unit}");
+
+        // Load colors
+        colors.put("primary", config.getString("colors.primary", "&#FFD700"));
+        colors.put("secondary", config.getString("colors.secondary", "&#FF6B6B"));
+        colors.put("success", config.getString("colors.success", "&#69DB7C"));
+        colors.put("warning", config.getString("colors.warning", "&#FFA94D"));
+        colors.put("error", config.getString("colors.error", "&#FF6B6B"));
+        colors.put("info", config.getString("colors.info", "&#74C0FC"));
+        colors.put("highlight", config.getString("colors.highlight", "&#DA77F2"));
 
         // Load sounds
         String[] soundAbilities = {"lifesteal", "thorns", "hungersteal", "wound"};
@@ -119,7 +133,7 @@ public class PluginConfig {
     }
 
     public String getAbilityColor(String ability) {
-        return config.getString("abilities." + ability + ".color", "§f");
+        return abilityColor.getOrDefault(ability, "&f");
     }
 
     public String getAbilityEmoji(String ability) {
@@ -128,6 +142,10 @@ public class PluginConfig {
 
     public String getAbilityUnit(String ability) {
         return config.getString("abilities." + ability + ".unit", "");
+    }
+
+    public String getColor(String key) {
+        return colors.getOrDefault(key, "&f");
     }
 
     public String getSound(String ability, String type) {

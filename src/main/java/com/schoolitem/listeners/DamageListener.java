@@ -2,6 +2,8 @@ package com.schoolitem.listeners;
 
 import com.schoolitem.SchoolItem;
 import com.schoolitem.config.PluginConfig;
+import com.schoolitem.utils.ColorUtils;
+import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -36,7 +38,9 @@ public class DamageListener implements Listener {
         Entity damager = event.getDamager();
         Entity victim = event.getEntity();
         
-        // ===== PVE / PVP Damage Reduction (chỉ áp dụng cho Player) =====
+        // ============================================
+        // 1. PVE / PVP Damage Reduction (Chỉ Player)
+        // ============================================
         if (victim instanceof Player player) {
             ItemStack item = player.getInventory().getItemInMainHand();
             if (item != null && item.hasItemMeta()) {
@@ -56,38 +60,96 @@ public class DamageListener implements Listener {
                         event.setDamage(reducedDamage);
                     }
                 }
+            }
+        }
+        
+        // ============================================
+        // 2. THORNS - Phản sát thương (FIXED)
+        // Áp dụng cho cả Player và Monster
+        // Tỉ lệ kích hoạt: 40% (config)
+        // Phản lại theo giá trị % sát thương nhận vào
+        // ============================================
+        if (victim instanceof LivingEntity && config.isAbilityEnabled("thorns")) {
+            LivingEntity victimEntity = (LivingEntity) victim;
+            ItemStack item = null;
+            
+            // Lấy item từ tay của victim
+            if (victim instanceof Player) {
+                item = ((Player) victim).getInventory().getItemInMainHand();
+            } else if (victim instanceof Mob) {
+                Mob mob = (Mob) victim;
+                if (mob.getEquipment() != null) {
+                    item = mob.getEquipment().getItemInMainHand();
+                }
+            }
+            
+            if (item != null && item.hasItemMeta()) {
+                double thornsValue = getAbilityValueFromItem(item, "thorns");
+                double chance = config.getAbilityChance("thorns"); // 40% mặc định
                 
-                // ===== Thorns (Phản sát thương) - Hoạt động với mọi entity =====
-                if (config.isAbilityEnabled("thorns") && damager instanceof LivingEntity) {
-                    double thornsValue = getAbilityValueFromItem(item, "thorns");
-                    double chance = config.getAbilityChance("thorns");
+                // Kiểm tra tỉ lệ kích hoạt (40%)
+                if (thornsValue > 0 && random.nextDouble() * 100 < chance) {
+                    // Tính sát thương phản lại theo giá trị %
+                    double damage = event.getDamage();
+                    double reflectDamage = damage * (thornsValue / 100.0);
                     
-                    if (thornsValue > 0 && random.nextDouble() * 100 < chance) {
+                    if (reflectDamage > 0 && damager instanceof LivingEntity) {
                         LivingEntity attacker = (LivingEntity) damager;
-                        double damage = event.getDamage();
-                        double reflectDamage = damage * (thornsValue / 100.0);
                         
-                        if (reflectDamage > 0) {
-                            attacker.damage(reflectDamage);
-                            
-                            // Sound effects
-                            if (config.isSoundEffects()) {
-                                if (attacker instanceof Player) {
-                                    ((Player) attacker).playSound(attacker.getLocation(), 
-                                        Sound.valueOf(config.getSound("thorns", "attacker")), 1.0f, 1.0f);
-                                }
-                                if (victim instanceof Player) {
-                                    ((Player) victim).playSound(victim.getLocation(), 
-                                        Sound.valueOf(config.getSound("thorns", "target")), 1.0f, 0.5f);
-                                }
+                        // Gây sát thương phản lại
+                        attacker.damage(reflectDamage);
+                        
+                        // Hiệu ứng âm thanh
+                        if (config.isSoundEffects()) {
+                            // Âm thanh cho attacker
+                            if (attacker instanceof Player) {
+                                ((Player) attacker).playSound(attacker.getLocation(), 
+                                    Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
+                            } else {
+                                attacker.getWorld().playSound(attacker.getLocation(), 
+                                    Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
                             }
+                            
+                            // Âm thanh cho victim
+                            if (victim instanceof Player) {
+                                ((Player) victim).playSound(victim.getLocation(), 
+                                    Sound.ENTITY_PLAYER_HURT, 1.0f, 0.5f);
+                            } else {
+                                victim.getWorld().playSound(victim.getLocation(), 
+                                    Sound.ENTITY_PLAYER_HURT, 1.0f, 0.5f);
+                            }
+                        }
+                        
+                        // Hiệu ứng hạt
+                        if (config.isParticleEffects() && damager.getWorld() != null) {
+                            damager.getWorld().spawnParticle(
+                                Particle.CRIT,
+                                damager.getLocation().add(0, 1, 0),
+                                20, 0.3, 0.3, 0.3, 0.1
+                            );
+                            victim.getWorld().spawnParticle(
+                                Particle.SWEEP_ATTACK,
+                                victim.getLocation().add(0, 1, 0),
+                                10, 0.3, 0.3, 0.3, 0.1
+                            );
+                        }
+                        
+                        // Thông báo cho Player (nếu là PVP)
+                        if (damager instanceof Player && victim instanceof Player) {
+                            ((Player) damager).sendMessage(ColorUtils.colorize(
+                                config.getMessagePrefix() + "&c🌵 Bạn bị phản " + 
+                                String.format("%.1f", reflectDamage) + " sát thương từ " + 
+                                ((Player) victim).getName() + "!"
+                            ));
                         }
                     }
                 }
             }
         }
         
-        // ===== Lifesteal (Hút máu) - Hoạt động với mọi entity =====
+        // ============================================
+        // 3. Lifesteal - Hút máu (Player tấn công)
+        // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("lifesteal")) {
             ItemStack item = player.getInventory().getItemInMainHand();
             if (item != null && item.hasItemMeta() && victim instanceof LivingEntity) {
@@ -115,12 +177,22 @@ public class DamageListener implements Listener {
                             player.playSound(target.getLocation(), 
                                 Sound.valueOf(config.getSound("lifesteal", "target")), 0.5f, 1.0f);
                         }
+                        
+                        if (config.isParticleEffects() && player.getWorld() != null) {
+                            player.getWorld().spawnParticle(
+                                Particle.HEART,
+                                player.getLocation().add(0, 1, 0),
+                                10, 0.3, 0.3, 0.3, 0.1
+                            );
+                        }
                     }
                 }
             }
         }
         
-        // ===== HungerSteal (Hút thức ăn) - Chỉ hoạt động với Player =====
+        // ============================================
+        // 4. HungerSteal - Hút thức ăn (Player tấn công Player)
+        // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("hungersteal")) {
             ItemStack item = player.getInventory().getItemInMainHand();
             if (item != null && item.hasItemMeta() && victim instanceof Player) {
@@ -151,7 +223,9 @@ public class DamageListener implements Listener {
             }
         }
         
-        // ===== Wound (Vết thương) - Hoạt động với mọi entity =====
+        // ============================================
+        // 5. Wound - Vết thương (Player tấn công Player)
+        // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("wound")) {
             ItemStack item = player.getInventory().getItemInMainHand();
             if (item != null && item.hasItemMeta() && victim instanceof Player) {
@@ -171,10 +245,14 @@ public class DamageListener implements Listener {
                             Sound.valueOf(config.getSound("wound", "attacker")), 1.0f, 1.0f);
                     }
                     
-                    targetPlayer.sendMessage(config.getMessagePrefix() + "§c🩸 Bạn đã bị Vết Thương! Giảm " + 
-                        woundValue + "% khả năng hồi máu trong " + duration + "s!");
-                    player.sendMessage(config.getMessagePrefix() + "§a🩸 Đã gây Vết Thương lên " + 
-                        targetPlayer.getName() + "!");
+                    targetPlayer.sendMessage(ColorUtils.colorize(
+                        config.getMessagePrefix() + "&c🩸 Bạn đã bị Vết Thương! Giảm " + 
+                        woundValue + "% khả năng hồi máu trong " + duration + "s!"
+                    ));
+                    player.sendMessage(ColorUtils.colorize(
+                        config.getMessagePrefix() + "&a🩸 Đã gây Vết Thương lên " + 
+                        targetPlayer.getName() + "!"
+                    ));
                 }
             }
         }

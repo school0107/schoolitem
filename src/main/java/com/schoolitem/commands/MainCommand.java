@@ -2,6 +2,7 @@ package com.schoolitem.commands;
 
 import com.schoolitem.SchoolItem;
 import com.schoolitem.config.PluginConfig;
+import com.schoolitem.utils.ColorUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -38,7 +39,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         }
         
         if (!player.hasPermission("schoolitem.admin")) {
-            sender.sendMessage(config.getMessagePrefix() + ChatColor.RED + "Bạn không có quyền sử dụng lệnh này!");
+            sender.sendMessage(ColorUtils.colorize(config.getMessagePrefix() + "&cBạn không có quyền sử dụng lệnh này!"));
             return true;
         }
         
@@ -51,7 +52,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         
         if (subCommand.equals("reload")) {
             plugin.reloadConfig();
-            sender.sendMessage(config.getMessagePrefix() + ChatColor.GREEN + "✓ Config đã được reload!");
+            sender.sendMessage(ColorUtils.colorize(config.getMessagePrefix() + "&a✓ Config đã được reload!"));
             return true;
         } else if (subCommand.equals("add")) {
             return handleAdd(player, args);
@@ -67,7 +68,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         if (args.length < 3) {
             player.sendMessage(ChatColor.RED + "Sử dụng: /si add <ability> <value>");
             player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal, wound");
-            player.sendMessage(ChatColor.YELLOW + "Ví dụ: /si add lifesteal 30");
+            player.sendMessage(ChatColor.YELLOW + "Ví dụ: /si add thorns 50");
             return true;
         }
         
@@ -81,7 +82,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         }
         
         if (!config.isAbilityEnabled(ability)) {
-            player.sendMessage(config.getMessagePrefix() + ChatColor.RED + "Ability " + ability + " đã bị tắt trong config!");
+            player.sendMessage(ColorUtils.colorize(config.getMessagePrefix() + "&cAbility " + ability + " đã bị tắt trong config!"));
             return true;
         }
         
@@ -125,12 +126,13 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             newLore.add(line);
         }
         
-        // Thêm ability mới - CHỈ 1 DÒNG
+        // Thêm ability mới với RGB color
         String color = config.getAbilityColor(ability);
         String emoji = config.getAbilityEmoji(ability);
         String displayName = config.getAbilityDisplayName(ability);
         String unit = config.getAbilityUnit(ability);
         
+        // Tạo lore với RGB color
         String loreLine = config.getLoreFormat()
                 .replace("{color}", color)
                 .replace("{emoji}", emoji)
@@ -141,21 +143,22 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         // Thêm tỉ lệ nếu có
         double chance = config.getAbilityChance(ability);
         if (chance < 100) {
-            loreLine += " §7| §fTỉ lệ: §e" + chance + "%";
+            loreLine += " &7| &fTỉ lệ: " + color + (int) chance + "%";
         }
         
         // Thêm thời gian nếu có (wound)
         int duration = config.getAbilityDuration(ability);
         if (duration > 0 && ability.equals("wound")) {
-            loreLine += " §7| §fThời gian: §e" + duration + "s";
+            loreLine += " &7| &fThời gian: " + color + duration + "s";
         }
         
-        newLore.add(loreLine);
+        // Colorize với RGB
+        newLore.add(ColorUtils.colorize(loreLine));
         
         meta.setLore(newLore);
         item.setItemMeta(meta);
         
-        player.sendMessage(config.getMessagePrefix() + ChatColor.GREEN + "✓ Đã thêm ability " + ability + " với giá trị " + value + unit);
+        player.sendMessage(ColorUtils.colorize(config.getMessagePrefix() + "&a✓ Đã thêm ability " + ability + " với giá trị " + value + unit));
         return true;
     }
     
@@ -189,7 +192,6 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         
         for (String line : lore) {
             if (targetAbility == null) {
-                // Xóa tất cả
                 removed = true;
                 continue;
             } else if (line.contains(abilityDisplay)) {
@@ -217,22 +219,22 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         item.setItemMeta(meta);
         
         if (targetAbility != null) {
-            player.sendMessage(config.getMessagePrefix() + ChatColor.GREEN + "✓ Đã xóa ability " + targetAbility + " khỏi item!");
+            player.sendMessage(ColorUtils.colorize(config.getMessagePrefix() + "&a✓ Đã xóa ability " + targetAbility + " khỏi item!"));
         } else {
-            player.sendMessage(config.getMessagePrefix() + ChatColor.GREEN + "✓ Đã xóa tất cả ability khỏi item!");
+            player.sendMessage(ColorUtils.colorize(config.getMessagePrefix() + "&a✓ Đã xóa tất cả ability khỏi item!"));
         }
         return true;
     }
     
     private void sendHelp(CommandSender sender) {
-        sender.sendMessage(ChatColor.GOLD + "===== SchoolItem Help =====");
-        sender.sendMessage(ChatColor.YELLOW + "/si add <ability> <value> - Thêm ability");
-        sender.sendMessage(ChatColor.YELLOW + "  ability: pve, pvp, multiplierblock");
-        sender.sendMessage(ChatColor.YELLOW + "           lifesteal, thorns, hungersteal, wound");
-        sender.sendMessage(ChatColor.YELLOW + "  Ví dụ: /si add lifesteal 30");
-        sender.sendMessage(ChatColor.YELLOW + "/si remove [ability] - Xóa ability");
-        sender.sendMessage(ChatColor.YELLOW + "  Ví dụ: /si remove lifesteal");
-        sender.sendMessage(ChatColor.YELLOW + "/si reload - Reload config");
+        sender.sendMessage(ColorUtils.colorize("&6===== SchoolItem Help ====="));
+        sender.sendMessage(ColorUtils.colorize("&e/si add <ability> <value> - Thêm ability"));
+        sender.sendMessage(ColorUtils.colorize("&e  ability: pve, pvp, multiplierblock"));
+        sender.sendMessage(ColorUtils.colorize("&e           lifesteal, thorns, hungersteal, wound"));
+        sender.sendMessage(ColorUtils.colorize("&e  Ví dụ: /si add thorns 50"));
+        sender.sendMessage(ColorUtils.colorize("&e/si remove [ability] - Xóa ability"));
+        sender.sendMessage(ColorUtils.colorize("&e  Ví dụ: /si remove thorns"));
+        sender.sendMessage(ColorUtils.colorize("&e/si reload - Reload config"));
     }
     
     @Override
