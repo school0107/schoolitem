@@ -23,7 +23,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private final PluginConfig config;
     private final List<String> abilities = Arrays.asList(
         "pve", "pvp", "multiplierblock", 
-        "lifesteal", "thorns", "hungersteal", "wound"
+        "lifesteal", "thorns", "hungersteal", "wound", "sweepattack"
     );
     
     public MainCommand(SchoolItem plugin) {
@@ -67,8 +67,8 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private boolean handleAdd(Player player, String[] args) {
         if (args.length < 3) {
             player.sendMessage(ChatColor.RED + "Sử dụng: /si add <ability> <value>");
-            player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal, wound");
-            player.sendMessage(ChatColor.YELLOW + "Ví dụ: /si add thorns 50");
+            player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal, wound, sweepattack");
+            player.sendMessage(ChatColor.YELLOW + "Ví dụ: /si add sweepattack 10");
             return true;
         }
         
@@ -96,7 +96,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         
         if (!abilities.contains(ability)) {
             player.sendMessage(ChatColor.RED + "Ability không hợp lệ!");
-            player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal, wound");
+            player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal, wound, sweepattack");
             return true;
         }
         
@@ -146,10 +146,10 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             loreLine += " &7| &fTỉ lệ: " + color + (int) chance + "%";
         }
         
-        // Thêm thời gian nếu có (wound)
+        // Thêm thời gian nếu có
         int duration = config.getAbilityDuration(ability);
-        if (duration > 0 && ability.equals("wound")) {
-            loreLine += " &7| &fThời gian: " + color + duration + "s";
+        if (duration > 0 && (ability.equals("wound") || ability.equals("sweepattack"))) {
+            loreLine += " &7| &fCooldown: " + color + duration + "s";
         }
         
         // Colorize với RGB
@@ -230,11 +230,12 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ColorUtils.colorize("&6===== SchoolItem Help ====="));
         sender.sendMessage(ColorUtils.colorize("&e/si add <ability> <value> - Thêm ability"));
         sender.sendMessage(ColorUtils.colorize("&e  ability: pve, pvp, multiplierblock"));
-        sender.sendMessage(ColorUtils.colorize("&e           lifesteal, thorns, hungersteal, wound"));
-        sender.sendMessage(ColorUtils.colorize("&e  Ví dụ: /si add thorns 50"));
+        sender.sendMessage(ColorUtils.colorize("&e           lifesteal, thorns, hungersteal, wound, sweepattack"));
+        sender.sendMessage(ColorUtils.colorize("&e  Ví dụ: /si add sweepattack 10"));
         sender.sendMessage(ColorUtils.colorize("&e/si remove [ability] - Xóa ability"));
-        sender.sendMessage(ColorUtils.colorize("&e  Ví dụ: /si remove thorns"));
+        sender.sendMessage(ColorUtils.colorize("&e  Ví dụ: /si remove sweepattack"));
         sender.sendMessage(ColorUtils.colorize("&e/si reload - Reload config"));
+        sender.sendMessage(ColorUtils.colorize("&b🌊 Sweep Attack: Chém không khí 10% tạo sóng sát thương"));
     }
     
     @Override
@@ -272,11 +273,12 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                 completions.add("5");
                 completions.add("10");
             } else if (ability.equals("lifesteal") || ability.equals("thorns") || 
-                       ability.equals("hungersteal") || ability.equals("wound")) {
+                       ability.equals("hungersteal") || ability.equals("wound") || 
+                       ability.equals("sweepattack")) {
+                completions.add("10");
                 completions.add("20");
                 completions.add("30");
                 completions.add("50");
-                completions.add("75");
             }
         }
         

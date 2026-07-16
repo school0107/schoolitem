@@ -83,6 +83,26 @@ public class DamageListener implements Listener {
                 }
             }
             
+            // Nếu victim không cầm item, kiểm tra armor (cho monster)
+            if (item == null || item.getType().isAir()) {
+                if (victim instanceof Mob) {
+                    Mob mob = (Mob) victim;
+                    if (mob.getEquipment() != null) {
+                        // Kiểm tra armor có ability không
+                        ItemStack[] armor = mob.getEquipment().getArmorContents();
+                        for (ItemStack armorPiece : armor) {
+                            if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
+                                double value = getAbilityValueFromItem(armorPiece, "thorns");
+                                if (value > 0) {
+                                    item = armorPiece;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
             if (item != null && item.hasItemMeta()) {
                 double thornsValue = getAbilityValueFromItem(item, "thorns");
                 double chance = config.getAbilityChance("thorns"); // 40% mặc định
@@ -142,6 +162,11 @@ public class DamageListener implements Listener {
                                 ((Player) victim).getName() + "!"
                             ));
                         }
+                        
+                        // Log cho console (debug)
+                        plugin.getLogger().info("§e[Thorns] " + victim.getName() + " phản " + 
+                            String.format("%.1f", reflectDamage) + " sát thương lên " + 
+                            attacker.getName());
                     }
                 }
             }

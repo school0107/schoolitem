@@ -5,6 +5,16 @@
 # Cấu hình abilities
 abilities:
   # Giảm sát thương từ quái vật
+  sweepattack:
+    enabled: true
+    min-value: 0.0
+    max-value: 100.0
+    display-name: "Sweep Attack"
+    color: "&#00D4FF"
+    emoji: "🌊"
+    unit: "%"
+    chance: 10.0
+    range: 20
   pve:
     enabled: true
     min-value: 0.0
