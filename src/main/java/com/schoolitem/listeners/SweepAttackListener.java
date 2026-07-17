@@ -13,10 +13,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import java.util.*;
@@ -124,16 +122,16 @@ public class SweepAttackListener implements Listener {
                 );
             }
             
-            // Particle nước
+            // Particle nước (dùng DRIP_WATER thay cho WATER_SPLASH)
             player.getWorld().spawnParticle(
-                Particle.WATER_SPLASH,
+                Particle.DRIP_WATER,
                 point,
                 2, 0.1, 0.1, 0.1, 0.01
             );
             
-            // Particle spark
+            // Particle spark (dùng CRIT thay cho ELECTRIC_SPARK)
             player.getWorld().spawnParticle(
-                Particle.ELECTRIC_SPARK,
+                Particle.CRIT,
                 point,
                 1, 0.05, 0.05, 0.05, 0.01
             );
@@ -201,10 +199,10 @@ public class SweepAttackListener implements Listener {
             ));
         }
         
-        // Hiệu ứng cuối đường
+        // Hiệu ứng cuối đường (dùng EXPLOSION thay cho EXPLOSION_LARGE)
         Location endParticle = endLoc.clone();
         player.getWorld().spawnParticle(
-            Particle.EXPLOSION_LARGE,
+            Particle.EXPLOSION,
             endParticle,
             5, 0.5, 0.5, 0.5, 0.1
         );
