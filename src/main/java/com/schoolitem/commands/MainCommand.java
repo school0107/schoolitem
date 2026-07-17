@@ -68,7 +68,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         if (args.length < 3) {
             player.sendMessage(ChatColor.RED + "Sử dụng: /si add <ability> <value>");
             player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal, wound, sweepattack");
-            player.sendMessage(ChatColor.YELLOW + "Ví dụ: /si add sweepattack 10");
+            player.sendMessage(ChatColor.YELLOW + "Ví dụ: /si add thorns 50");
             return true;
         }
         
@@ -132,7 +132,6 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         String displayName = config.getAbilityDisplayName(ability);
         String unit = config.getAbilityUnit(ability);
         
-        // Tạo lore với RGB color
         String loreLine = config.getLoreFormat()
                 .replace("{color}", color)
                 .replace("{emoji}", emoji)
@@ -140,19 +139,16 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                 .replace("{value}", String.valueOf(value))
                 .replace("{unit}", unit);
         
-        // Thêm tỉ lệ nếu có
         double chance = config.getAbilityChance(ability);
         if (chance < 100) {
             loreLine += " &7| &fTỉ lệ: " + color + (int) chance + "%";
         }
         
-        // Thêm thời gian nếu có
         int duration = config.getAbilityDuration(ability);
         if (duration > 0 && (ability.equals("wound") || ability.equals("sweepattack"))) {
             loreLine += " &7| &fCooldown: " + color + duration + "s";
         }
         
-        // Colorize với RGB
         newLore.add(ColorUtils.colorize(loreLine));
         
         meta.setLore(newLore);
@@ -231,11 +227,10 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ColorUtils.colorize("&e/si add <ability> <value> - Thêm ability"));
         sender.sendMessage(ColorUtils.colorize("&e  ability: pve, pvp, multiplierblock"));
         sender.sendMessage(ColorUtils.colorize("&e           lifesteal, thorns, hungersteal, wound, sweepattack"));
-        sender.sendMessage(ColorUtils.colorize("&e  Ví dụ: /si add sweepattack 10"));
+        sender.sendMessage(ColorUtils.colorize("&e  Ví dụ: /si add thorns 50"));
         sender.sendMessage(ColorUtils.colorize("&e/si remove [ability] - Xóa ability"));
-        sender.sendMessage(ColorUtils.colorize("&e  Ví dụ: /si remove sweepattack"));
+        sender.sendMessage(ColorUtils.colorize("&e  Ví dụ: /si remove thorns"));
         sender.sendMessage(ColorUtils.colorize("&e/si reload - Reload config"));
-        sender.sendMessage(ColorUtils.colorize("&b🌊 Sweep Attack: Chém không khí 10% tạo sóng sát thương"));
     }
     
     @Override

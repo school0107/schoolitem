@@ -24,6 +24,7 @@ public class DamageListener implements Listener {
     private final PluginConfig config;
     private final Random random = new Random();
     private final Map<UUID, Long> woundEffect = new HashMap<>();
+    private final Map<UUID, Long> lastThornsMessage = new HashMap<>();
     
     public DamageListener(SchoolItem plugin) {
         this.plugin = plugin;
@@ -39,89 +40,100 @@ public class DamageListener implements Listener {
         Entity victim = event.getEntity();
         
         // ============================================
-        // 1. PVE / PVP Damage Reduction (Chỉ Player)
+        // 1. PVE / PVP Damage Reduction (Player)
         // ============================================
         if (victim instanceof Player player) {
-            ItemStack item = player.getInventory().getItemInMainHand();
-            if (item != null && item.hasItemMeta()) {
-                
-                boolean isPVE = damager instanceof Monster;
-                boolean isPVP = damager instanceof Player;
-                
-                if ((isPVE && config.isAbilityEnabled("pve")) || 
-                    (isPVP && config.isAbilityEnabled("pvp"))) {
-                    String ability = isPVE ? "pve" : "pvp";
-                    double value = getAbilityValueFromItem(item, ability);
-                    
-                    if (value > 0) {
-                        if (value > 100) value = 100;
-                        double damage = event.getDamage();
-                        double reducedDamage = damage * (1 - value / 100.0);
-                        event.setDamage(reducedDamage);
-                    }
+            double totalPve = 0;
+            double totalPvp = 0;
+            
+            ItemStack mainHand = player.getInventory().getItemInMainHand();
+            if (mainHand != null && !mainHand.getType().isAir() && mainHand.hasItemMeta()) {
+                totalPve += getAbilityValueFromItem(mainHand, "pve");
+                totalPvp += getAbilityValueFromItem(mainHand, "pvp");
+            }
+            
+            ItemStack[] armor = player.getInventory().getArmorContents();
+            for (ItemStack armorPiece : armor) {
+                if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
+                    totalPve += getAbilityValueFromItem(armorPiece, "pve");
+                    totalPvp += getAbilityValueFromItem(armorPiece, "pvp");
                 }
+            }
+            
+            boolean isPVE = damager instanceof Monster;
+            boolean isPVP = damager instanceof Player;
+            
+            if (isPVE && config.isAbilityEnabled("pve") && totalPve > 0) {
+                double damage = event.getDamage();
+                double reducedDamage = damage * (1 - Math.min(totalPve, 100) / 100.0);
+                event.setDamage(reducedDamage);
+            }
+            
+            if (isPVP && config.isAbilityEnabled("pvp") && totalPvp > 0) {
+                double damage = event.getDamage();
+                double reducedDamage = damage * (1 - Math.min(totalPvp, 100) / 100.0);
+                event.setDamage(reducedDamage);
             }
         }
         
         // ============================================
-        // 2. THORNS - Phản sát thương (FIXED)
-        // Áp dụng cho cả Player và Monster
-        // Tỉ lệ kích hoạt: 40% (config)
-        // Phản lại theo giá trị % sát thương nhận vào
+        // 2. THORNS - Phản sát thương (CÓ TỈ LỆ 40%)
         // ============================================
         if (victim instanceof LivingEntity && config.isAbilityEnabled("thorns")) {
-            LivingEntity victimEntity = (LivingEntity) victim;
-            ItemStack item = null;
+            double totalThorns = 0;
             
-            // Lấy item từ tay của victim
+            // Lấy từ item trên tay
+            ItemStack mainHand = null;
             if (victim instanceof Player) {
-                item = ((Player) victim).getInventory().getItemInMainHand();
+                mainHand = ((Player) victim).getInventory().getItemInMainHand();
             } else if (victim instanceof Mob) {
                 Mob mob = (Mob) victim;
                 if (mob.getEquipment() != null) {
-                    item = mob.getEquipment().getItemInMainHand();
+                    mainHand = mob.getEquipment().getItemInMainHand();
                 }
             }
             
-            // Nếu victim không cầm item, kiểm tra armor (cho monster)
-            if (item == null || item.getType().isAir()) {
-                if (victim instanceof Mob) {
-                    Mob mob = (Mob) victim;
-                    if (mob.getEquipment() != null) {
-                        // Kiểm tra armor có ability không
-                        ItemStack[] armor = mob.getEquipment().getArmorContents();
-                        for (ItemStack armorPiece : armor) {
-                            if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
-                                double value = getAbilityValueFromItem(armorPiece, "thorns");
-                                if (value > 0) {
-                                    item = armorPiece;
-                                    break;
-                                }
-                            }
+            if (mainHand != null && !mainHand.getType().isAir() && mainHand.hasItemMeta()) {
+                totalThorns += getAbilityValueFromItem(mainHand, "thorns");
+            }
+            
+            // Lấy từ giáp
+            if (victim instanceof Player) {
+                Player player = (Player) victim;
+                ItemStack[] armor = player.getInventory().getArmorContents();
+                for (ItemStack armorPiece : armor) {
+                    if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
+                        totalThorns += getAbilityValueFromItem(armorPiece, "thorns");
+                    }
+                }
+            } else if (victim instanceof Mob) {
+                Mob mob = (Mob) victim;
+                if (mob.getEquipment() != null) {
+                    ItemStack[] armor = mob.getEquipment().getArmorContents();
+                    for (ItemStack armorPiece : armor) {
+                        if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
+                            totalThorns += getAbilityValueFromItem(armorPiece, "thorns");
                         }
                     }
                 }
             }
             
-            if (item != null && item.hasItemMeta()) {
-                double thornsValue = getAbilityValueFromItem(item, "thorns");
+            if (totalThorns > 100) totalThorns = 100;
+            
+            if (totalThorns > 0 && damager instanceof LivingEntity) {
                 double chance = config.getAbilityChance("thorns"); // 40% mặc định
                 
-                // Kiểm tra tỉ lệ kích hoạt (40%)
-                if (thornsValue > 0 && random.nextDouble() * 100 < chance) {
-                    // Tính sát thương phản lại theo giá trị %
+                // CHỈ KÍCH HOẠT KHI RANDOM < CHANCE (40%)
+                if (random.nextDouble() * 100 < chance) {
                     double damage = event.getDamage();
-                    double reflectDamage = damage * (thornsValue / 100.0);
+                    double reflectDamage = damage * (totalThorns / 100.0);
                     
-                    if (reflectDamage > 0 && damager instanceof LivingEntity) {
+                    if (reflectDamage > 0) {
                         LivingEntity attacker = (LivingEntity) damager;
-                        
-                        // Gây sát thương phản lại
                         attacker.damage(reflectDamage);
                         
                         // Hiệu ứng âm thanh
                         if (config.isSoundEffects()) {
-                            // Âm thanh cho attacker
                             if (attacker instanceof Player) {
                                 ((Player) attacker).playSound(attacker.getLocation(), 
                                     Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
@@ -130,7 +142,6 @@ public class DamageListener implements Listener {
                                     Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
                             }
                             
-                            // Âm thanh cho victim
                             if (victim instanceof Player) {
                                 ((Player) victim).playSound(victim.getLocation(), 
                                     Sound.ENTITY_PLAYER_HURT, 1.0f, 0.5f);
@@ -145,7 +156,7 @@ public class DamageListener implements Listener {
                             damager.getWorld().spawnParticle(
                                 Particle.CRIT,
                                 damager.getLocation().add(0, 1, 0),
-                                20, 0.3, 0.3, 0.3, 0.1
+                                15, 0.3, 0.3, 0.3, 0.1
                             );
                             victim.getWorld().spawnParticle(
                                 Particle.SWEEP_ATTACK,
@@ -154,43 +165,45 @@ public class DamageListener implements Listener {
                             );
                         }
                         
-                        // Thông báo cho Player (nếu là PVP)
-                        if (damager instanceof Player && victim instanceof Player) {
-                            ((Player) damager).sendMessage(ColorUtils.colorize(
-                                config.getMessagePrefix() + "&c🌵 Bạn bị phản " + 
-                                String.format("%.1f", reflectDamage) + " sát thương từ " + 
-                                ((Player) victim).getName() + "!"
-                            ));
-                        }
-                        
-                        // Log cho console (debug)
-                        plugin.getLogger().info("§e[Thorns] " + victim.getName() + " phản " + 
-                            String.format("%.1f", reflectDamage) + " sát thương lên " + 
-                            attacker.getName());
+                        // KHÔNG HIỂN THỊ THÔNG BÁO - ĐÃ XÓA
+                        // Chỉ hiển thị cho PVP nếu muốn (nhưng đã tắt)
                     }
                 }
             }
         }
         
         // ============================================
-        // 3. Lifesteal - Hút máu (Player tấn công)
+        // 3. Lifesteal - Hút máu (KHÔNG LOG)
         // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("lifesteal")) {
-            ItemStack item = player.getInventory().getItemInMainHand();
-            if (item != null && item.hasItemMeta() && victim instanceof LivingEntity) {
+            double totalLifesteal = 0;
+            
+            ItemStack mainHand = player.getInventory().getItemInMainHand();
+            if (mainHand != null && !mainHand.getType().isAir() && mainHand.hasItemMeta()) {
+                totalLifesteal += getAbilityValueFromItem(mainHand, "lifesteal");
+            }
+            
+            ItemStack[] armor = player.getInventory().getArmorContents();
+            for (ItemStack armorPiece : armor) {
+                if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
+                    totalLifesteal += getAbilityValueFromItem(armorPiece, "lifesteal");
+                }
+            }
+            
+            if (totalLifesteal > 100) totalLifesteal = 100;
+            
+            if (totalLifesteal > 0 && victim instanceof LivingEntity) {
                 LivingEntity target = (LivingEntity) victim;
                 double damage = event.getDamage();
-                double lifestealValue = getAbilityValueFromItem(item, "lifesteal");
                 double chance = config.getAbilityChance("lifesteal");
                 
-                if (lifestealValue > 0 && random.nextDouble() * 100 < chance) {
-                    // Kiểm tra target có đang bị Wound không
+                if (random.nextDouble() * 100 < chance) {
                     double healMultiplier = 1.0;
                     if (target instanceof Player) {
                         healMultiplier = getHealMultiplier((Player) target);
                     }
                     
-                    double healAmount = damage * (lifestealValue / 100.0) * healMultiplier;
+                    double healAmount = damage * (totalLifesteal / 100.0) * healMultiplier;
                     
                     if (healAmount > 0) {
                         double newHealth = Math.min(player.getHealth() + healAmount, player.getMaxHealth());
@@ -216,18 +229,31 @@ public class DamageListener implements Listener {
         }
         
         // ============================================
-        // 4. HungerSteal - Hút thức ăn (Player tấn công Player)
+        // 4. HungerSteal - Hút thức ăn (KHÔNG LOG)
         // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("hungersteal")) {
-            ItemStack item = player.getInventory().getItemInMainHand();
-            if (item != null && item.hasItemMeta() && victim instanceof Player) {
+            double totalHunger = 0;
+            
+            ItemStack mainHand = player.getInventory().getItemInMainHand();
+            if (mainHand != null && !mainHand.getType().isAir() && mainHand.hasItemMeta()) {
+                totalHunger += getAbilityValueFromItem(mainHand, "hungersteal");
+            }
+            
+            ItemStack[] armor = player.getInventory().getArmorContents();
+            for (ItemStack armorPiece : armor) {
+                if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
+                    totalHunger += getAbilityValueFromItem(armorPiece, "hungersteal");
+                }
+            }
+            
+            if (totalHunger > 100) totalHunger = 100;
+            
+            if (totalHunger > 0 && victim instanceof Player) {
                 Player targetPlayer = (Player) victim;
-                double damage = event.getDamage();
-                double hungerValue = getAbilityValueFromItem(item, "hungersteal");
                 double chance = config.getAbilityChance("hungersteal");
                 
-                if (hungerValue > 0 && random.nextDouble() * 100 < chance) {
-                    int foodToSteal = (int) Math.ceil(hungerValue / 10.0);
+                if (random.nextDouble() * 100 < chance) {
+                    int foodToSteal = (int) Math.ceil(totalHunger / 10.0);
                     if (foodToSteal > 0) {
                         int targetFood = targetPlayer.getFoodLevel();
                         int newTargetFood = Math.max(0, targetFood - foodToSteal);
@@ -249,17 +275,31 @@ public class DamageListener implements Listener {
         }
         
         // ============================================
-        // 5. Wound - Vết thương (Player tấn công Player)
+        // 5. Wound - Vết thương (KHÔNG LOG)
         // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("wound")) {
-            ItemStack item = player.getInventory().getItemInMainHand();
-            if (item != null && item.hasItemMeta() && victim instanceof Player) {
+            double totalWound = 0;
+            
+            ItemStack mainHand = player.getInventory().getItemInMainHand();
+            if (mainHand != null && !mainHand.getType().isAir() && mainHand.hasItemMeta()) {
+                totalWound += getAbilityValueFromItem(mainHand, "wound");
+            }
+            
+            ItemStack[] armor = player.getInventory().getArmorContents();
+            for (ItemStack armorPiece : armor) {
+                if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
+                    totalWound += getAbilityValueFromItem(armorPiece, "wound");
+                }
+            }
+            
+            if (totalWound > 100) totalWound = 100;
+            
+            if (totalWound > 0 && victim instanceof Player) {
                 Player targetPlayer = (Player) victim;
-                double woundValue = getAbilityValueFromItem(item, "wound");
                 double chance = config.getAbilityChance("wound");
                 int duration = config.getAbilityDuration("wound");
                 
-                if (woundValue > 0 && random.nextDouble() * 100 < chance) {
+                if (random.nextDouble() * 100 < chance) {
                     UUID targetId = targetPlayer.getUniqueId();
                     woundEffect.put(targetId, System.currentTimeMillis() + duration * 1000);
                     
@@ -270,9 +310,10 @@ public class DamageListener implements Listener {
                             Sound.valueOf(config.getSound("wound", "attacker")), 1.0f, 1.0f);
                     }
                     
+                    // Chỉ hiển thị thông báo Wound (quan trọng)
                     targetPlayer.sendMessage(ColorUtils.colorize(
                         config.getMessagePrefix() + "&c🩸 Bạn đã bị Vết Thương! Giảm " + 
-                        woundValue + "% khả năng hồi máu trong " + duration + "s!"
+                        totalWound + "% khả năng hồi máu trong " + duration + "s!"
                     ));
                     player.sendMessage(ColorUtils.colorize(
                         config.getMessagePrefix() + "&a🩸 Đã gây Vết Thương lên " + 
@@ -297,11 +338,24 @@ public class DamageListener implements Listener {
             return;
         }
         
-        // Lấy giá trị Wound từ item đang cầm
-        double woundValue = getWoundValue(player);
-        if (woundValue > 0) {
+        double totalWound = 0;
+        ItemStack mainHand = player.getInventory().getItemInMainHand();
+        if (mainHand != null && !mainHand.getType().isAir() && mainHand.hasItemMeta()) {
+            totalWound += getAbilityValueFromItem(mainHand, "wound");
+        }
+        
+        ItemStack[] armor = player.getInventory().getArmorContents();
+        for (ItemStack armorPiece : armor) {
+            if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
+                totalWound += getAbilityValueFromItem(armorPiece, "wound");
+            }
+        }
+        
+        if (totalWound > 100) totalWound = 100;
+        
+        if (totalWound > 0) {
             double healAmount = event.getAmount();
-            double reducedHeal = healAmount * (1 - woundValue / 100.0);
+            double reducedHeal = healAmount * (1 - totalWound / 100.0);
             event.setAmount(reducedHeal);
         }
     }
@@ -316,14 +370,21 @@ public class DamageListener implements Listener {
             return 1.0;
         }
         
-        double woundValue = getWoundValue(player);
-        return 1.0 - (woundValue / 100.0);
-    }
-    
-    private double getWoundValue(Player player) {
-        ItemStack item = player.getInventory().getItemInMainHand();
-        if (item == null || !item.hasItemMeta()) return 0;
-        return getAbilityValueFromItem(item, "wound");
+        double totalWound = 0;
+        ItemStack mainHand = player.getInventory().getItemInMainHand();
+        if (mainHand != null && !mainHand.getType().isAir() && mainHand.hasItemMeta()) {
+            totalWound += getAbilityValueFromItem(mainHand, "wound");
+        }
+        
+        ItemStack[] armor = player.getInventory().getArmorContents();
+        for (ItemStack armorPiece : armor) {
+            if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
+                totalWound += getAbilityValueFromItem(armorPiece, "wound");
+            }
+        }
+        
+        if (totalWound > 100) totalWound = 100;
+        return 1.0 - (totalWound / 100.0);
     }
     
     private double getAbilityValueFromItem(ItemStack item, String ability) {
