@@ -35,22 +35,18 @@ public class SweepAttackListener implements Listener {
     public void onPlayerInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         
-        // Chỉ xử lý khi click chuột trái (attack)
         if (!event.getAction().name().contains("LEFT_CLICK")) return;
         if (!config.isAbilityEnabled("sweepattack")) return;
         
         ItemStack item = player.getInventory().getItemInMainHand();
         if (item == null || !item.hasItemMeta()) return;
         
-        // Kiểm tra item có ability Sweep Attack không
         double sweepValue = getAbilityValueFromItem(item, "sweepattack");
         if (sweepValue <= 0) return;
         
-        // Kiểm tra tỉ lệ kích hoạt (10%)
         double chance = config.getAbilityChance("sweepattack");
         if (random.nextDouble() * 100 > chance) return;
         
-        // Kiểm tra cooldown
         UUID playerId = player.getUniqueId();
         long currentTime = System.currentTimeMillis();
         int cooldownSeconds = config.getAbilityDuration("sweepattack");
@@ -68,76 +64,28 @@ public class SweepAttackListener implements Listener {
             }
         }
         
-        // Kiểm tra đã swing chưa (tránh spam)
         if (lastSwingMap.containsKey(playerId)) {
             long lastSwing = lastSwingMap.get(playerId);
-            if ((currentTime - lastSwing) < 200) return; // 0.2s debounce
+            if ((currentTime - lastSwing) < 200) return;
         }
         lastSwingMap.put(playerId, currentTime);
         
-        // Lấy thông số
         double damage = sweepValue;
         int range = config.getConfig().getInt("abilities.sweepattack.range", 20);
         
-        // Kích hoạt Sweep Attack
         activateSweepAttack(player, damage, range);
-        
-        // Set cooldown
         cooldownMap.put(playerId, currentTime);
     }
     
     private void activateSweepAttack(Player player, double damage, int range) {
-        // Lấy hướng nhìn của player
         Vector direction = player.getLocation().getDirection().normalize();
         Location startLoc = player.getEyeLocation().clone().add(direction.clone().multiply(0.5));
-        Location endLoc = startLoc.clone().add(direction.clone().multiply(range));
         
         // Hiệu ứng âm thanh
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 1.0f);
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 1.5f);
         
-        // Hiệu ứng hạt - Vẽ đường sóng
-        final int steps = range * 2;
-        final double stepSize = 0.5;
-        final double radius = 1.0;
-        
-        // Tạo hiệu ứng ánh sáng
-        for (int i = 0; i < steps; i++) {
-            double t = i * stepSize;
-            if (t > range) break;
-            
-            Location point = startLoc.clone().add(direction.clone().multiply(t));
-            
-            // Vẽ vòng tròn xung quanh đường đi
-            for (int angle = 0; angle < 360; angle += 15) {
-                double rad = Math.toRadians(angle);
-                double x = Math.cos(rad) * radius * (1 - t / range * 0.7);
-                double z = Math.sin(rad) * radius * (1 - t / range * 0.7);
-                Location circlePoint = point.clone().add(x, 0, z);
-                
-                player.getWorld().spawnParticle(
-                    Particle.SWEEP_ATTACK,
-                    circlePoint,
-                    1, 0, 0, 0, 0
-                );
-            }
-            
-            // Particle nước (dùng DRIP_WATER thay cho WATER_SPLASH)
-            player.getWorld().spawnParticle(
-                Particle.DRIP_WATER,
-                point,
-                2, 0.1, 0.1, 0.1, 0.01
-            );
-            
-            // Particle spark (dùng CRIT thay cho ELECTRIC_SPARK)
-            player.getWorld().spawnParticle(
-                Particle.CRIT,
-                point,
-                1, 0.05, 0.05, 0.05, 0.01
-            );
-        }
-        
-        // Phát hiện và gây sát thương cho các entity trên đường
+        // Tạo hiệu ứng sóng
         List<Entity> hitEntities = new ArrayList<>();
         for (int i = 0; i <= range * 2; i++) {
             double t = i * 0.5;
@@ -145,20 +93,40 @@ public class SweepAttackListener implements Listener {
             
             Location checkPoint = startLoc.clone().add(direction.clone().multiply(t));
             
+            // Particle SWEEP_ATTACK - hiệu ứng quét
+            player.getWorld().spawnParticle(
+                Particle.SWEEP_ATTACK,
+                checkPoint,
+                2, 0.1, 0.1, 0.1, 0
+            );
+            
+            // Particle CRIT - hiệu ứng ánh sáng
+            if (i % 2 == 0) {
+                player.getWorld().spawnParticle(
+                    Particle.CRIT,
+                    checkPoint,
+                    3, 0.2, 0.2, 0.2, 0.05
+                );
+            }
+            
+            // Particle FIREWORK - hiệu ứng màu xanh
+            if (i % 3 == 0) {
+                player.getWorld().spawnParticle(
+                    Particle.FIREWORK,
+                    checkPoint,
+                    2, 0.1, 0.1, 0.1, 0
+                );
+            }
+            
             // Kiểm tra entity trong phạm vi
             for (Entity entity : player.getWorld().getNearbyEntities(checkPoint, 1.5, 1.5, 1.5)) {
                 if (entity.equals(player)) continue;
                 if (!(entity instanceof LivingEntity)) continue;
                 if (hitEntities.contains(entity)) continue;
                 
-                // Không gây sát thương cho người chơi cùng team (nếu có)
-                if (entity instanceof Player) {
-                    Player target = (Player) entity;
-                    // Có thể thêm check team ở đây
-                }
+                LivingEntity target = (LivingEntity) entity;
                 
                 // Gây sát thương
-                LivingEntity target = (LivingEntity) entity;
                 target.damage(damage, player);
                 
                 // Hiệu ứng khi trúng
@@ -169,13 +137,13 @@ public class SweepAttackListener implements Listener {
                 target.getWorld().spawnParticle(
                     Particle.EXPLOSION,
                     target.getLocation().add(0, 1, 0),
-                    10, 0.3, 0.3, 0.3, 0.1
+                    5, 0.3, 0.3, 0.3, 0.1
                 );
                 
                 target.getWorld().spawnParticle(
                     Particle.CRIT,
                     target.getLocation().add(0, 1, 0),
-                    20, 0.3, 0.3, 0.3, 0.1
+                    15, 0.3, 0.3, 0.3, 0.1
                 );
                 
                 // Đẩy entity
@@ -199,16 +167,14 @@ public class SweepAttackListener implements Listener {
             ));
         }
         
-        // Hiệu ứng cuối đường (dùng EXPLOSION thay cho EXPLOSION_LARGE)
-        Location endParticle = endLoc.clone();
+        // Hiệu ứng cuối đường
+        Location endLoc = startLoc.clone().add(direction.clone().multiply(range));
         player.getWorld().spawnParticle(
             Particle.EXPLOSION,
-            endParticle,
-            5, 0.5, 0.5, 0.5, 0.1
+            endLoc,
+            3, 0.5, 0.5, 0.5, 0.1
         );
-        
-        // Hiệu ứng âm thanh cuối
-        player.getWorld().playSound(endParticle, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.5f);
+        player.getWorld().playSound(endLoc, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.5f);
     }
     
     private double getAbilityValueFromItem(ItemStack item, String ability) {
