@@ -88,6 +88,92 @@ abilities:
     unit: "%"
     chance: 10.0
     duration: 10
+# ============================================
+# SET BONUS - Tùy chỉnh nhiều Set khác nhau
+# ============================================
+setbonus:
+  enabled: true
+  
+  # Set 1: Warrior Set - Tăng sát thương và máu
+  warrior:
+    name: "&c&lChiến Binh"
+    color: "&#FF6B6B"
+    emoji: "⚔️"
+    required: 4
+    buffs:
+      damage: 50.0
+      health: 20.0
+      thorns: 0.0
+    particle: "FLAME"
+    sound: "ENTITY_PLAYER_LEVELUP"
+    
+  # Set 2: Tank Set - Tăng phòng thủ và phản đòn
+  tank:
+    name: "&6&lKhiên Đồng"
+    color: "&#FFA94D"
+    emoji: "🛡️"
+    required: 4
+    buffs:
+      damage: 0.0
+      health: 30.0
+      thorns: 25.0
+    particle: "CRIT"
+    sound: "ENTITY_ITEM_BREAK"
+    
+  # Set 3: Assassin Set - Tăng sát thương và hút máu
+  assassin:
+    name: "&d&lSát Thủ"
+    color: "&#DA77F2"
+    emoji: "🗡️"
+    required: 4
+    buffs:
+      damage: 75.0
+      health: 10.0
+      thorns: 0.0
+      lifesteal: 15.0
+    particle: "SPELL_WITCH"
+    sound: "ENTITY_PLAYER_ATTACK_SWEEP"
+    
+  # Set 4: Mage Set - Tăng sát thương và hút thức ăn
+  mage:
+    name: "&b&lPháp Sư"
+    color: "&#74C0FC"
+    emoji: "🔮"
+    required: 4
+    buffs:
+      damage: 40.0
+      health: 5.0
+      thorns: 0.0
+      hungersteal: 30.0
+    particle: "DRAGON_BREATH"
+    sound: "ENTITY_PLAYER_LEVELUP"
+    
+  # Set 5: Berserker Set - Tăng sát thương và phản đòn
+  berserker:
+    name: "&4&lCuồng Sát"
+    color: "&#FF6B6B"
+    emoji: "💢"
+    required: 3
+    buffs:
+      damage: 100.0
+      health: 5.0
+      thorns: 50.0
+    particle: "EXPLOSION"
+    sound: "ENTITY_WITHER_SPAWN"
+    
+  # Set 6: Archer Set - Tăng sát thương và tốc độ
+  archer:
+    name: "&a&lCung Thủ"
+    color: "&#69DB7C"
+    emoji: "🏹"
+    required: 4
+    buffs:
+      damage: 60.0
+      health: 15.0
+      thorns: 0.0
+      speed: 20.0
+    particle: "SPELL"
+    sound: "ENTITY_ARROW_SHOOT"
 
 # Cài đặt chung
 settings:

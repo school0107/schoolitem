@@ -24,11 +24,15 @@ public class DamageListener implements Listener {
     private final PluginConfig config;
     private final Random random = new Random();
     private final Map<UUID, Long> woundEffect = new HashMap<>();
-    private final Map<UUID, Long> lastThornsMessage = new HashMap<>();
+    private SetBonusListener setBonusListener;
     
     public DamageListener(SchoolItem plugin) {
         this.plugin = plugin;
         this.config = plugin.getPluginConfig();
+    }
+    
+    public void setSetBonusListener(SetBonusListener listener) {
+        this.setBonusListener = listener;
     }
     
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -40,7 +44,21 @@ public class DamageListener implements Listener {
         Entity victim = event.getEntity();
         
         // ============================================
-        // 1. PVE / PVP Damage Reduction (Player)
+        // 0. SET BONUS - Tăng sát thương
+        // ============================================
+        if (damager instanceof Player player && config.isAbilityEnabled("setbonus")) {
+            if (setBonusListener != null) {
+                double damageBonus = setBonusListener.getBuffValue(player, "damage");
+                if (damageBonus > 0) {
+                    double damage = event.getDamage();
+                    double bonusDamage = damage * (damageBonus / 100.0);
+                    event.setDamage(damage + bonusDamage);
+                }
+            }
+        }
+        
+        // ============================================
+        // 1. PVE / PVP Damage Reduction
         // ============================================
         if (victim instanceof Player player) {
             double totalPve = 0;
@@ -57,6 +75,16 @@ public class DamageListener implements Listener {
                 if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
                     totalPve += getAbilityValueFromItem(armorPiece, "pve");
                     totalPvp += getAbilityValueFromItem(armorPiece, "pvp");
+                }
+            }
+            
+            // Set Bonus Health
+            if (setBonusListener != null && config.isAbilityEnabled("setbonus")) {
+                double healthBonus = setBonusListener.getBuffValue(player, "health");
+                if (healthBonus > 0) {
+                    double maxHealth = player.getMaxHealth();
+                    double bonusHealth = maxHealth * (healthBonus / 100.0);
+                    player.setMaxHealth(maxHealth + bonusHealth);
                 }
             }
             
@@ -77,7 +105,7 @@ public class DamageListener implements Listener {
         }
         
         // ============================================
-        // 2. THORNS - Phản sát thương (CÓ TỈ LỆ 40%)
+        // 2. THORNS - Phản sát thương
         // ============================================
         if (victim instanceof LivingEntity && config.isAbilityEnabled("thorns")) {
             double totalThorns = 0;
@@ -118,12 +146,16 @@ public class DamageListener implements Listener {
                 }
             }
             
+            // Set Bonus Thorns
+            if (victim instanceof Player && setBonusListener != null && config.isAbilityEnabled("setbonus")) {
+                totalThorns += setBonusListener.getBuffValue((Player) victim, "thorns");
+            }
+            
             if (totalThorns > 100) totalThorns = 100;
             
             if (totalThorns > 0 && damager instanceof LivingEntity) {
-                double chance = config.getAbilityChance("thorns"); // 40% mặc định
+                double chance = config.getAbilityChance("thorns");
                 
-                // CHỈ KÍCH HOẠT KHI RANDOM < CHANCE (40%)
                 if (random.nextDouble() * 100 < chance) {
                     double damage = event.getDamage();
                     double reflectDamage = damage * (totalThorns / 100.0);
@@ -132,7 +164,6 @@ public class DamageListener implements Listener {
                         LivingEntity attacker = (LivingEntity) damager;
                         attacker.damage(reflectDamage);
                         
-                        // Hiệu ứng âm thanh
                         if (config.isSoundEffects()) {
                             if (attacker instanceof Player) {
                                 ((Player) attacker).playSound(attacker.getLocation(), 
@@ -151,7 +182,6 @@ public class DamageListener implements Listener {
                             }
                         }
                         
-                        // Hiệu ứng hạt
                         if (config.isParticleEffects() && damager.getWorld() != null) {
                             damager.getWorld().spawnParticle(
                                 Particle.CRIT,
@@ -164,16 +194,13 @@ public class DamageListener implements Listener {
                                 10, 0.3, 0.3, 0.3, 0.1
                             );
                         }
-                        
-                        // KHÔNG HIỂN THỊ THÔNG BÁO - ĐÃ XÓA
-                        // Chỉ hiển thị cho PVP nếu muốn (nhưng đã tắt)
                     }
                 }
             }
         }
         
         // ============================================
-        // 3. Lifesteal - Hút máu (KHÔNG LOG)
+        // 3. Lifesteal - Hút máu
         // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("lifesteal")) {
             double totalLifesteal = 0;
@@ -188,6 +215,11 @@ public class DamageListener implements Listener {
                 if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
                     totalLifesteal += getAbilityValueFromItem(armorPiece, "lifesteal");
                 }
+            }
+            
+            // Set Bonus Lifesteal
+            if (setBonusListener != null && config.isAbilityEnabled("setbonus")) {
+                totalLifesteal += setBonusListener.getBuffValue(player, "lifesteal");
             }
             
             if (totalLifesteal > 100) totalLifesteal = 100;
@@ -229,7 +261,7 @@ public class DamageListener implements Listener {
         }
         
         // ============================================
-        // 4. HungerSteal - Hút thức ăn (KHÔNG LOG)
+        // 4. HungerSteal - Hút thức ăn
         // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("hungersteal")) {
             double totalHunger = 0;
@@ -244,6 +276,11 @@ public class DamageListener implements Listener {
                 if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
                     totalHunger += getAbilityValueFromItem(armorPiece, "hungersteal");
                 }
+            }
+            
+            // Set Bonus HungerSteal
+            if (setBonusListener != null && config.isAbilityEnabled("setbonus")) {
+                totalHunger += setBonusListener.getBuffValue(player, "hungersteal");
             }
             
             if (totalHunger > 100) totalHunger = 100;
@@ -275,7 +312,7 @@ public class DamageListener implements Listener {
         }
         
         // ============================================
-        // 5. Wound - Vết thương (KHÔNG LOG)
+        // 5. Wound - Vết thương
         // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("wound")) {
             double totalWound = 0;
@@ -310,7 +347,6 @@ public class DamageListener implements Listener {
                             Sound.valueOf(config.getSound("wound", "attacker")), 1.0f, 1.0f);
                     }
                     
-                    // Chỉ hiển thị thông báo Wound (quan trọng)
                     targetPlayer.sendMessage(ColorUtils.colorize(
                         config.getMessagePrefix() + "&c🩸 Bạn đã bị Vết Thương! Giảm " + 
                         totalWound + "% khả năng hồi máu trong " + duration + "s!"
