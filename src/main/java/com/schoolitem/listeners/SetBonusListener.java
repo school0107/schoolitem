@@ -3,8 +3,6 @@ package com.schoolitem.listeners;
 import com.schoolitem.SchoolItem;
 import com.schoolitem.config.PluginConfig;
 import com.schoolitem.utils.ColorUtils;
-import org.bukkit.Color;
-import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -54,7 +52,6 @@ public class SetBonusListener implements Listener {
             String color = setSection.getString(setKey + ".color", "&f");
             String emoji = setSection.getString(setKey + ".emoji", "✦");
             int required = setSection.getInt(setKey + ".required", 4);
-            String particle = setSection.getString(setKey + ".particle", "TOTEM");
             String sound = setSection.getString(setKey + ".sound", "ENTITY_PLAYER_LEVELUP");
             
             // Lấy buffs
@@ -68,7 +65,7 @@ public class SetBonusListener implements Listener {
             
             SetBonusData data = new SetBonusData(
                 setKey, name, color, emoji, required, 
-                buffs, particle, sound
+                buffs, sound
             );
             setDataMap.put(setKey, data);
         }
@@ -229,22 +226,6 @@ public class SetBonusListener implements Listener {
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
         }
         
-        // Hiệu ứng hạt
-        try {
-            Particle particle = Particle.valueOf(data.particle);
-            player.getWorld().spawnParticle(
-                particle,
-                player.getLocation().add(0, 1, 0),
-                30, 0.5, 0.5, 0.5, 0.1
-            );
-        } catch (Exception e) {
-            player.getWorld().spawnParticle(
-                Particle.TOTEM,
-                player.getLocation().add(0, 1, 0),
-                30, 0.5, 0.5, 0.5, 0.1
-            );
-        }
-        
         // Áp dụng Potion Effect nếu có Speed
         if (data.buffs.containsKey("speed") && data.buffs.get("speed") > 0) {
             int duration = 20 * 60 * 5; // 5 phút
@@ -305,11 +286,10 @@ public class SetBonusListener implements Listener {
         public final String displayName;
         public final int required;
         public final Map<String, Double> buffs;
-        public final String particle;
         public final String sound;
         
         public SetBonusData(String setKey, String name, String color, String emoji, 
-                           int required, Map<String, Double> buffs, String particle, String sound) {
+                           int required, Map<String, Double> buffs, String sound) {
             this.setKey = setKey;
             this.name = ColorUtils.colorize(name);
             this.color = color;
@@ -317,7 +297,6 @@ public class SetBonusListener implements Listener {
             this.displayName = ColorUtils.colorize(color + emoji + " " + name);
             this.required = required;
             this.buffs = buffs;
-            this.particle = particle;
             this.sound = sound;
         }
     }
