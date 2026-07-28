@@ -44,7 +44,169 @@ public class DamageListener implements Listener {
         Entity victim = event.getEntity();
         
         // ============================================
-        // 0. SET BONUS - Tăng sát thương
+        // 0. DODGE - Né tránh (cho victim là Player)
+        // ============================================
+        if (victim instanceof Player player && config.isAbilityEnabled("dodge")) {
+            double totalDodge = 0;
+            
+            ItemStack mainHand = player.getInventory().getItemInMainHand();
+            if (mainHand != null && !mainHand.getType().isAir() && mainHand.hasItemMeta()) {
+                totalDodge += getAbilityValueFromItem(mainHand, "dodge");
+            }
+            
+            ItemStack[] armor = player.getInventory().getArmorContents();
+            for (ItemStack armorPiece : armor) {
+                if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
+                    totalDodge += getAbilityValueFromItem(armorPiece, "dodge");
+                }
+            }
+            
+            if (setBonusListener != null && config.isAbilityEnabled("setbonus")) {
+                totalDodge += setBonusListener.getBuffValue(player, "dodge");
+            }
+            
+            if (totalDodge > 100) totalDodge = 100;
+            
+            if (totalDodge > 0 && random.nextDouble() * 100 < totalDodge) {
+                event.setCancelled(true);
+                
+                if (config.isSoundEffects()) {
+                    player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_SWIM, 1.0f, 1.5f);
+                    if (damager instanceof Player) {
+                        ((Player) damager).playSound(damager.getLocation(), Sound.ENTITY_ARROW_MISS, 1.0f, 1.0f);
+                    }
+                }
+                
+                if (config.isParticleEffects() && player.getWorld() != null) {
+                    player.getWorld().spawnParticle(
+                        Particle.CLOUD,
+                        player.getLocation().add(0, 1, 0),
+                        15, 0.3, 0.3, 0.3, 0.1
+                    );
+                }
+                
+                if (damager instanceof Player) {
+                    ((Player) damager).sendMessage(ColorUtils.colorize(
+                        config.getMessagePrefix() + "&b💨 " + player.getName() + " đã né tránh đòn tấn công của bạn!"
+                    ));
+                }
+                return;
+            }
+        }
+        
+        // ============================================
+        // 1. CRITICAL STRIKE - Đòn chí mạng (cho damager là Player)
+        // ============================================
+        if (damager instanceof Player player && config.isAbilityEnabled("critical")) {
+            double totalCritical = 0;
+            
+            ItemStack mainHand = player.getInventory().getItemInMainHand();
+            if (mainHand != null && !mainHand.getType().isAir() && mainHand.hasItemMeta()) {
+                totalCritical += getAbilityValueFromItem(mainHand, "critical");
+            }
+            
+            ItemStack[] armor = player.getInventory().getArmorContents();
+            for (ItemStack armorPiece : armor) {
+                if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
+                    totalCritical += getAbilityValueFromItem(armorPiece, "critical");
+                }
+            }
+            
+            if (setBonusListener != null && config.isAbilityEnabled("setbonus")) {
+                totalCritical += setBonusListener.getBuffValue(player, "critical");
+            }
+            
+            if (totalCritical > 100) totalCritical = 100;
+            
+            if (totalCritical > 0 && random.nextDouble() * 100 < totalCritical) {
+                // Nhân sát thương x1.8
+                double multiplier = config.getConfig().getDouble("abilities.critical.multiplier", 1.8);
+                double damage = event.getDamage();
+                double criticalDamage = damage * multiplier;
+                event.setDamage(criticalDamage);
+                
+                // Hiệu ứng âm thanh
+                if (config.isSoundEffects()) {
+                    player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0f, 1.5f);
+                    if (victim instanceof LivingEntity) {
+                        victim.getWorld().playSound(victim.getLocation(), Sound.ENTITY_PLAYER_HURT, 1.0f, 0.5f);
+                    }
+                }
+                
+                // Hiệu ứng hạt
+                if (config.isParticleEffects() && victim.getWorld() != null) {
+                    victim.getWorld().spawnParticle(
+                        Particle.CRIT,
+                        victim.getLocation().add(0, 1, 0),
+                        30, 0.3, 0.3, 0.3, 0.1
+                    );
+                    victim.getWorld().spawnParticle(
+                        Particle.EXPLOSION,
+                        victim.getLocation().add(0, 1, 0),
+                        5, 0.3, 0.3, 0.3, 0.1
+                    );
+                }
+                
+                // Thông báo (chỉ PVP)
+                if (victim instanceof Player) {
+                    ((Player) victim).sendMessage(ColorUtils.colorize(
+                        config.getMessagePrefix() + "&c💥 Bạn đã bị đòn chí mạng từ " + 
+                        player.getName() + "! (+" + (int)((multiplier - 1) * 100) + "% sát thương)"
+                    ));
+                    player.sendMessage(ColorUtils.colorize(
+                        config.getMessagePrefix() + "&a💥 Đòn chí mạng! Gây " + 
+                        String.format("%.1f", criticalDamage) + " sát thương lên " + 
+                        ((Player) victim).getName() + "!"
+                    ));
+                }
+            }
+        }
+        
+        // ============================================
+        // 2. PRECISION - Chính xác
+        // ============================================
+        if (damager instanceof Player player && config.isAbilityEnabled("precision")) {
+            double totalPrecision = 0;
+            
+            ItemStack mainHand = player.getInventory().getItemInMainHand();
+            if (mainHand != null && !mainHand.getType().isAir() && mainHand.hasItemMeta()) {
+                totalPrecision += getAbilityValueFromItem(mainHand, "precision");
+            }
+            
+            ItemStack[] armor = player.getInventory().getArmorContents();
+            for (ItemStack armorPiece : armor) {
+                if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
+                    totalPrecision += getAbilityValueFromItem(armorPiece, "precision");
+                }
+            }
+            
+            if (setBonusListener != null && config.isAbilityEnabled("setbonus")) {
+                totalPrecision += setBonusListener.getBuffValue(player, "precision");
+            }
+            
+            if (totalPrecision > 100) totalPrecision = 100;
+            
+            if (totalPrecision > 0 && random.nextDouble() * 100 < totalPrecision) {
+                double damage = event.getDamage();
+                double bonusDamage = damage * (totalPrecision / 100.0);
+                event.setDamage(damage + bonusDamage);
+                
+                if (config.isSoundEffects()) {
+                    player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_ATTACK_STRONG, 1.0f, 1.0f);
+                }
+                
+                if (config.isParticleEffects() && victim.getWorld() != null) {
+                    victim.getWorld().spawnParticle(
+                        Particle.CRIT,
+                        victim.getLocation().add(0, 1, 0),
+                        15, 0.3, 0.3, 0.3, 0.1
+                    );
+                }
+            }
+        }
+        
+        // ============================================
+        // 3. SET BONUS - Tăng sát thương
         // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("setbonus")) {
             if (setBonusListener != null) {
@@ -58,7 +220,7 @@ public class DamageListener implements Listener {
         }
         
         // ============================================
-        // 1. PVE / PVP Damage Reduction
+        // 4. PVE / PVP Damage Reduction
         // ============================================
         if (victim instanceof Player player) {
             double totalPve = 0;
@@ -78,7 +240,6 @@ public class DamageListener implements Listener {
                 }
             }
             
-            // Set Bonus Health
             if (setBonusListener != null && config.isAbilityEnabled("setbonus")) {
                 double healthBonus = setBonusListener.getBuffValue(player, "health");
                 if (healthBonus > 0) {
@@ -105,12 +266,11 @@ public class DamageListener implements Listener {
         }
         
         // ============================================
-        // 2. THORNS - Phản sát thương
+        // 5. THORNS - Phản sát thương
         // ============================================
         if (victim instanceof LivingEntity && config.isAbilityEnabled("thorns")) {
             double totalThorns = 0;
             
-            // Lấy từ item trên tay
             ItemStack mainHand = null;
             if (victim instanceof Player) {
                 mainHand = ((Player) victim).getInventory().getItemInMainHand();
@@ -125,7 +285,6 @@ public class DamageListener implements Listener {
                 totalThorns += getAbilityValueFromItem(mainHand, "thorns");
             }
             
-            // Lấy từ giáp
             if (victim instanceof Player) {
                 Player player = (Player) victim;
                 ItemStack[] armor = player.getInventory().getArmorContents();
@@ -146,7 +305,6 @@ public class DamageListener implements Listener {
                 }
             }
             
-            // Set Bonus Thorns
             if (victim instanceof Player && setBonusListener != null && config.isAbilityEnabled("setbonus")) {
                 totalThorns += setBonusListener.getBuffValue((Player) victim, "thorns");
             }
@@ -200,7 +358,7 @@ public class DamageListener implements Listener {
         }
         
         // ============================================
-        // 3. Lifesteal - Hút máu
+        // 6. Lifesteal - Hút máu
         // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("lifesteal")) {
             double totalLifesteal = 0;
@@ -217,7 +375,6 @@ public class DamageListener implements Listener {
                 }
             }
             
-            // Set Bonus Lifesteal
             if (setBonusListener != null && config.isAbilityEnabled("setbonus")) {
                 totalLifesteal += setBonusListener.getBuffValue(player, "lifesteal");
             }
@@ -261,7 +418,7 @@ public class DamageListener implements Listener {
         }
         
         // ============================================
-        // 4. HungerSteal - Hút thức ăn
+        // 7. HungerSteal - Hút thức ăn
         // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("hungersteal")) {
             double totalHunger = 0;
@@ -278,7 +435,6 @@ public class DamageListener implements Listener {
                 }
             }
             
-            // Set Bonus HungerSteal
             if (setBonusListener != null && config.isAbilityEnabled("setbonus")) {
                 totalHunger += setBonusListener.getBuffValue(player, "hungersteal");
             }
@@ -312,7 +468,7 @@ public class DamageListener implements Listener {
         }
         
         // ============================================
-        // 5. Wound - Vết thương
+        // 8. Wound - Vết thương
         // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("wound")) {
             double totalWound = 0;

@@ -88,6 +88,35 @@ abilities:
     unit: "%"
     chance: 10.0
     duration: 10
+  precision:
+    enabled: true
+    min-value: 0.0
+    max-value: 100.0
+    display-name: "Chính Xác"
+    color: "&#FFD700"
+    emoji: "🎯"
+    unit: "%"
+    
+  dodge:
+    enabled: true
+    min-value: 0.0
+    max-value: 100.0
+    display-name: "Né Tránh"
+    color: "&#74C0FC"
+    emoji: "💨"
+    unit: "%"
+    # ============================================
+  # CRITICAL STRIKE - Đòn Chí Mạng
+  # ============================================
+  critical:
+    enabled: true
+    min-value: 0.0
+    max-value: 100.0
+    display-name: "Chí Mạng"
+    color: "&#FF4500"
+    emoji: "💥"
+    unit: "%"
+    multiplier: 1.8
 # ============================================
 # SET BONUS - Tùy chỉnh nhiều Set khác nhau
 # ============================================
