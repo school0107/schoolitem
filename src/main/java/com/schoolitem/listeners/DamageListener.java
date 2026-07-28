@@ -73,7 +73,7 @@ public class DamageListener implements Listener {
                 if (config.isSoundEffects()) {
                     player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_SWIM, 1.0f, 1.5f);
                     if (damager instanceof Player) {
-                        ((Player) damager).playSound(damager.getLocation(), Sound.ENTITY_ARROW_MISS, 1.0f, 1.0f);
+                        ((Player) damager).playSound(damager.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0f, 0.5f);
                     }
                 }
                 
@@ -95,7 +95,7 @@ public class DamageListener implements Listener {
         }
         
         // ============================================
-        // 1. CRITICAL STRIKE - Đòn chí mạng (cho damager là Player)
+        // 1. CRITICAL STRIKE - Đòn chí mạng
         // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("critical")) {
             double totalCritical = 0;
@@ -119,13 +119,11 @@ public class DamageListener implements Listener {
             if (totalCritical > 100) totalCritical = 100;
             
             if (totalCritical > 0 && random.nextDouble() * 100 < totalCritical) {
-                // Nhân sát thương x1.8
                 double multiplier = config.getConfig().getDouble("abilities.critical.multiplier", 1.8);
                 double damage = event.getDamage();
                 double criticalDamage = damage * multiplier;
                 event.setDamage(criticalDamage);
                 
-                // Hiệu ứng âm thanh
                 if (config.isSoundEffects()) {
                     player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0f, 1.5f);
                     if (victim instanceof LivingEntity) {
@@ -133,7 +131,6 @@ public class DamageListener implements Listener {
                     }
                 }
                 
-                // Hiệu ứng hạt
                 if (config.isParticleEffects() && victim.getWorld() != null) {
                     victim.getWorld().spawnParticle(
                         Particle.CRIT,
@@ -147,7 +144,6 @@ public class DamageListener implements Listener {
                     );
                 }
                 
-                // Thông báo (chỉ PVP)
                 if (victim instanceof Player) {
                     ((Player) victim).sendMessage(ColorUtils.colorize(
                         config.getMessagePrefix() + "&c💥 Bạn đã bị đòn chí mạng từ " + 
