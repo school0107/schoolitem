@@ -354,9 +354,9 @@ public class DamageListener implements Listener {
         }
         
         // ============================================
-        // 6. Lifesteal - Hút máu
+        // 6. LIFESTEAL PVP - Hút máu từ người chơi
         // ============================================
-        if (damager instanceof Player player && config.isAbilityEnabled("lifesteal")) {
+        if (damager instanceof Player player && config.isAbilityEnabled("lifesteal") && victim instanceof Player) {
             double totalLifesteal = 0;
             
             ItemStack mainHand = player.getInventory().getItemInMainHand();
@@ -377,17 +377,13 @@ public class DamageListener implements Listener {
             
             if (totalLifesteal > 100) totalLifesteal = 100;
             
-            if (totalLifesteal > 0 && victim instanceof LivingEntity) {
-                LivingEntity target = (LivingEntity) victim;
+            if (totalLifesteal > 0) {
+                Player targetPlayer = (Player) victim;
                 double damage = event.getDamage();
                 double chance = config.getAbilityChance("lifesteal");
                 
                 if (random.nextDouble() * 100 < chance) {
-                    double healMultiplier = 1.0;
-                    if (target instanceof Player) {
-                        healMultiplier = getHealMultiplier((Player) target);
-                    }
-                    
+                    double healMultiplier = getHealMultiplier(targetPlayer);
                     double healAmount = damage * (totalLifesteal / 100.0) * healMultiplier;
                     
                     if (healAmount > 0) {
@@ -397,7 +393,7 @@ public class DamageListener implements Listener {
                         if (config.isSoundEffects()) {
                             player.playSound(player.getLocation(), 
                                 Sound.valueOf(config.getSound("lifesteal", "attacker")), 1.0f, 1.5f);
-                            player.playSound(target.getLocation(), 
+                            targetPlayer.playSound(targetPlayer.getLocation(), 
                                 Sound.valueOf(config.getSound("lifesteal", "target")), 0.5f, 1.0f);
                         }
                         
@@ -414,7 +410,64 @@ public class DamageListener implements Listener {
         }
         
         // ============================================
-        // 7. HungerSteal - Hút thức ăn
+        // 7. LIFESTEAL PVE - Hút máu từ thực thể (không phải Player)
+        // ============================================
+        if (damager instanceof Player player && config.isAbilityEnabled("lifestealPve") && 
+            victim instanceof LivingEntity && !(victim instanceof Player)) {
+            
+            double totalLifestealPve = 0;
+            
+            ItemStack mainHand = player.getInventory().getItemInMainHand();
+            if (mainHand != null && !mainHand.getType().isAir() && mainHand.hasItemMeta()) {
+                totalLifestealPve += getAbilityValueFromItem(mainHand, "lifestealPve");
+            }
+            
+            ItemStack[] armor = player.getInventory().getArmorContents();
+            for (ItemStack armorPiece : armor) {
+                if (armorPiece != null && !armorPiece.getType().isAir() && armorPiece.hasItemMeta()) {
+                    totalLifestealPve += getAbilityValueFromItem(armorPiece, "lifestealPve");
+                }
+            }
+            
+            if (setBonusListener != null && config.isAbilityEnabled("setbonus")) {
+                totalLifestealPve += setBonusListener.getBuffValue(player, "lifestealPve");
+            }
+            
+            if (totalLifestealPve > 100) totalLifestealPve = 100;
+            
+            if (totalLifestealPve > 0) {
+                LivingEntity target = (LivingEntity) victim;
+                double damage = event.getDamage();
+                double chance = config.getAbilityChance("lifestealPve");
+                
+                if (random.nextDouble() * 100 < chance) {
+                    double healAmount = damage * (totalLifestealPve / 100.0);
+                    
+                    if (healAmount > 0) {
+                        double newHealth = Math.min(player.getHealth() + healAmount, player.getMaxHealth());
+                        player.setHealth(newHealth);
+                        
+                        if (config.isSoundEffects()) {
+                            player.playSound(player.getLocation(), 
+                                Sound.valueOf(config.getSound("lifestealPve", "attacker")), 1.0f, 1.5f);
+                            target.getWorld().playSound(target.getLocation(), 
+                                Sound.valueOf(config.getSound("lifestealPve", "target")), 0.5f, 1.0f);
+                        }
+                        
+                        if (config.isParticleEffects() && player.getWorld() != null) {
+                            player.getWorld().spawnParticle(
+                                Particle.HEART,
+                                player.getLocation().add(0, 1, 0),
+                                10, 0.3, 0.3, 0.3, 0.1
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        
+        // ============================================
+        // 8. HungerSteal - Hút thức ăn
         // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("hungersteal")) {
             double totalHunger = 0;
@@ -464,7 +517,7 @@ public class DamageListener implements Listener {
         }
         
         // ============================================
-        // 8. Wound - Vết thương
+        // 9. Wound - Vết thương
         // ============================================
         if (damager instanceof Player player && config.isAbilityEnabled("wound")) {
             double totalWound = 0;

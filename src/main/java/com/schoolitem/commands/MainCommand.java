@@ -23,8 +23,8 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private final PluginConfig config;
     private final List<String> abilities = Arrays.asList(
         "pve", "pvp", "multiplierblock", 
-        "lifesteal", "thorns", "hungersteal", "wound", "sweepattack", 
-        "setbonus", "precision", "dodge", "critical"
+        "lifesteal", "lifestealPve", "thorns", "hungersteal", "wound", 
+        "sweepattack", "setbonus", "precision", "dodge", "critical"
     );
     
     public MainCommand(SchoolItem plugin) {
@@ -68,8 +68,8 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private boolean handleAdd(Player player, String[] args) {
         if (args.length < 3) {
             player.sendMessage(ChatColor.RED + "Sử dụng: /si add <ability> <value>");
-            player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal, wound, sweepattack, setbonus, precision, dodge, critical");
-            player.sendMessage(ChatColor.YELLOW + "Ví dụ: /si add critical 30");
+            player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, lifestealPve, thorns, hungersteal, wound, sweepattack, setbonus, precision, dodge, critical");
+            player.sendMessage(ChatColor.YELLOW + "Ví dụ: /si add lifestealPve 30");
             return true;
         }
         
@@ -97,7 +97,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         
         if (!abilities.contains(ability)) {
             player.sendMessage(ChatColor.RED + "Ability không hợp lệ!");
-            player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, thorns, hungersteal, wound, sweepattack, setbonus, precision, dodge, critical");
+            player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, lifestealPve, thorns, hungersteal, wound, sweepattack, setbonus, precision, dodge, critical");
             return true;
         }
         
@@ -250,15 +250,15 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ColorUtils.colorize("&6===== SchoolItem Help ====="));
         sender.sendMessage(ColorUtils.colorize("&e/si add <ability> <value> - Thêm ability"));
         sender.sendMessage(ColorUtils.colorize("&e  ability: pve, pvp, multiplierblock"));
-        sender.sendMessage(ColorUtils.colorize("&e           lifesteal, thorns, hungersteal, wound"));
+        sender.sendMessage(ColorUtils.colorize("&e           lifesteal (PVP), lifestealPve (PVE)"));
+        sender.sendMessage(ColorUtils.colorize("&e           thorns, hungersteal, wound"));
         sender.sendMessage(ColorUtils.colorize("&e           sweepattack, setbonus, precision, dodge, critical"));
         sender.sendMessage(ColorUtils.colorize("&e  setbonus: 1=Warrior, 2=Tank, 3=Assassin, 4=Mage, 5=Berserker, 6=Archer"));
-        sender.sendMessage(ColorUtils.colorize("&e  critical: tỉ lệ gây đòn chí mạng x1.8 sát thương"));
-        sender.sendMessage(ColorUtils.colorize("&e  Ví dụ: /si add critical 30"));
+        sender.sendMessage(ColorUtils.colorize("&e  lifestealPve: Hút máu từ mob/monster (không phải người chơi)"));
+        sender.sendMessage(ColorUtils.colorize("&e  Ví dụ: /si add lifestealPve 30"));
         sender.sendMessage(ColorUtils.colorize("&e/si remove [ability] - Xóa ability"));
-        sender.sendMessage(ColorUtils.colorize("&e  Ví dụ: /si remove critical"));
+        sender.sendMessage(ColorUtils.colorize("&e  Ví dụ: /si remove lifestealPve"));
         sender.sendMessage(ColorUtils.colorize("&e/si reload - Reload config"));
-        sender.sendMessage(ColorUtils.colorize("&b💥 Critical: Tỉ lệ gây đòn chí mạng x1.8 sát thương"));
     }
     
     @Override
@@ -295,10 +295,11 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                 completions.add("3");
                 completions.add("5");
                 completions.add("10");
-            } else if (ability.equals("lifesteal") || ability.equals("thorns") || 
-                       ability.equals("hungersteal") || ability.equals("wound") || 
-                       ability.equals("sweepattack") || ability.equals("precision") ||
-                       ability.equals("dodge") || ability.equals("critical")) {
+            } else if (ability.equals("lifesteal") || ability.equals("lifestealPve") || 
+                       ability.equals("thorns") || ability.equals("hungersteal") || 
+                       ability.equals("wound") || ability.equals("sweepattack") || 
+                       ability.equals("precision") || ability.equals("dodge") || 
+                       ability.equals("critical")) {
                 completions.add("10");
                 completions.add("20");
                 completions.add("30");

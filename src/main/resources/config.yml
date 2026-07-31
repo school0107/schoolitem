@@ -54,6 +54,18 @@ abilities:
     emoji: "❤️"
     unit: "%"
     chance: 100.0
+    # ============================================
+  # LIFESTEAL PVE - Hút máu từ mob/monster
+  # ============================================
+  lifestealpve:
+    enabled: true
+    min-value: 0.0
+    max-value: 100.0
+    display-name: "Hút Máu PVE"
+    color: "&#FF6B6B"
+    emoji: "💖"
+    unit: "%"
+    chance: 100.0
     
   # Phản sát thương
   thorns:
