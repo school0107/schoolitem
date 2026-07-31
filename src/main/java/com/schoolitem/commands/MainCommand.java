@@ -82,6 +82,23 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         
+        // Kiểm tra ability có tồn tại không (không phân biệt hoa thường)
+        String matchedAbility = null;
+        for (String ab : abilities) {
+            if (ab.equalsIgnoreCase(ability)) {
+                matchedAbility = ab;
+                break;
+            }
+        }
+        
+        if (matchedAbility == null) {
+            player.sendMessage(ChatColor.RED + "Ability không hợp lệ!");
+            player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, lifestealPve, thorns, hungersteal, wound, sweepattack, setbonus, precision, dodge, critical");
+            return true;
+        }
+        
+        ability = matchedAbility;
+        
         if (!config.isAbilityEnabled(ability)) {
             player.sendMessage(ColorUtils.colorize(config.getMessagePrefix() + "&cAbility " + ability + " đã bị tắt trong config!"));
             return true;
@@ -92,12 +109,6 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         
         if (value < minValue || value > maxValue) {
             player.sendMessage(ChatColor.RED + "Giá trị phải từ " + minValue + " đến " + maxValue + "!");
-            return true;
-        }
-        
-        if (!abilities.contains(ability)) {
-            player.sendMessage(ChatColor.RED + "Ability không hợp lệ!");
-            player.sendMessage(ChatColor.YELLOW + "Các ability: pve, pvp, multiplierblock, lifesteal, lifestealPve, thorns, hungersteal, wound, sweepattack, setbonus, precision, dodge, critical");
             return true;
         }
         
@@ -200,8 +211,14 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         
         String targetAbility = null;
         if (args.length >= 2) {
-            targetAbility = args[1].toLowerCase();
-            if (!abilities.contains(targetAbility)) {
+            String abilityInput = args[1].toLowerCase();
+            for (String ab : abilities) {
+                if (ab.equalsIgnoreCase(abilityInput)) {
+                    targetAbility = ab;
+                    break;
+                }
+            }
+            if (targetAbility == null) {
                 player.sendMessage(ChatColor.RED + "Ability không hợp lệ!");
                 return true;
             }
@@ -274,13 +291,13 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("add")) {
             for (String ability : abilities) {
-                if (ability.startsWith(args[1].toLowerCase())) {
+                if (ability.toLowerCase().startsWith(args[1].toLowerCase())) {
                     completions.add(ability);
                 }
             }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("remove")) {
             for (String ability : abilities) {
-                if (ability.startsWith(args[1].toLowerCase())) {
+                if (ability.toLowerCase().startsWith(args[1].toLowerCase())) {
                     completions.add(ability);
                 }
             }
